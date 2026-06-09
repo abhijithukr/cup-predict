@@ -4,13 +4,12 @@ export interface UserProfile {
   username: string;
   fullName: string;
   email: string;
-  studentId: string;
   points: number;
   rank: number;
   accuracy: number | null;
   predictionsCount: number;
   winStreak: number;
-  classYear: string;
+  semester: string;
   department: string;
   avatarUrl: string;
 }

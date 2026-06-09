@@ -21,19 +21,19 @@ async function enrichUser(user: any) {
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { username, fullName, email, studentId, password, classYear, department } = req.body;
+    const { username, fullName, email, password, semester, department } = req.body;
 
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ username }, { email }, { studentId }] },
+      where: { OR: [{ username }, { email }] },
     });
     if (existing) {
-      res.status(409).json({ error: 'Username, email, or student ID already exists' });
+      res.status(409).json({ error: 'Username or email already exists' });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { username, fullName, email, studentId, passwordHash, classYear, department },
+      data: { username, fullName, email, passwordHash, semester, department },
     });
 
     const token = generateToken({ userId: user.id, username: user.username });

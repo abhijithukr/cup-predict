@@ -12,8 +12,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [studentId, setStudentId] = useState('');
-  const [classYear, setClassYear] = useState('');
+  const [semester, setSemester] = useState('');
   const [department, setDepartment] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +34,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     setError('');
 
     if (mode === 'REGISTER') {
-      if (!username.trim() || !password.trim() || !fullName.trim() || !email.trim() || !studentId.trim() || !classYear.trim() || !department.trim()) {
+      if (!username.trim() || !password.trim() || !fullName.trim() || !email.trim() || !semester.trim() || !department.trim()) {
         setError('Please fill in all fields.');
         return;
       }
@@ -52,7 +51,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
         const data = await login(username, password);
         onLoginSuccess(data.user, data.token);
       } else {
-        const data = await register({ username, fullName, email, studentId, password, classYear, department });
+        const data = await register({ username, fullName, email, password, semester, department });
         onLoginSuccess(data.user, data.token);
       }
     } catch (err: any) {
@@ -113,21 +112,13 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                     placeholder="john@university.edu" type="email"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="font-bold text-[10px] uppercase tracking-widest text-zinc-500 block px-1" htmlFor="studentId">Student ID</label>
-                  <input 
-                    className="w-full px-4 py-3.5 bg-zinc-900 border border-zinc-500/10 rounded-none font-medium text-sm outline-none focus:border-zinc-400 transition-all placeholder:text-zinc-500 text-zinc-300 tracking-wide"
-                    id="studentId" value={studentId} onChange={(e) => setStudentId(e.target.value)}
-                    placeholder="SU-2024-0000" type="text"
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="font-bold text-[10px] uppercase tracking-widest text-zinc-500 block px-1" htmlFor="classYear">Class Year</label>
+                    <label className="font-bold text-[10px] uppercase tracking-widest text-zinc-500 block px-1" htmlFor="semester">Semester</label>
                     <input 
                       className="w-full px-4 py-3.5 bg-zinc-900 border border-zinc-500/10 rounded-none font-medium text-sm outline-none focus:border-zinc-400 transition-all placeholder:text-zinc-500 text-zinc-300 tracking-wide"
-                      id="classYear" value={classYear} onChange={(e) => setClassYear(e.target.value)}
-                      placeholder="Class of 2027" type="text"
+                      id="semester" value={semester} onChange={(e) => setSemester(e.target.value)}
+                      placeholder="e.g. 3" type="text"
                     />
                   </div>
                   <div className="space-y-2">

@@ -77,10 +77,10 @@ export default function ProfileView({ user }: ProfileViewProps) {
             <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1.5 justify-center md:justify-start">
               <h2 className="text-2xl md:text-3xl font-black text-[#0b1c30]">{user.fullName}</h2>
               <span className="bg-[#eff4ff] text-[#0051d5] border border-blue-105 font-bold text-xs px-3 py-0.5 rounded-full inline-block self-center">
-                {user.studentId}
+                CET Football League
               </span>
             </div>
-            <p className="text-[#3d4a3d] font-bold text-sm mb-3">Senior &bull; {user.classYear} &bull; Department of {user.department}</p>
+            <p className="text-[#3d4a3d] font-bold text-sm mb-3">Department of {user.department} &bull; Semester {user.semester}</p>
             
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-xs font-bold text-gray-500">
               <div className="flex items-center gap-1">

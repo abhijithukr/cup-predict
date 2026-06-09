@@ -25,8 +25,8 @@ export async function login(username: string, password: string) {
 }
 
 export async function register(body: {
-  username: string; fullName: string; email: string; studentId: string;
-  password: string; classYear: string; department: string;
+  username: string; fullName: string; email: string;
+  password: string; semester: string; department: string;
 }) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
