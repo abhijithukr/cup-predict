@@ -6,4 +6,6 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   databaseUrl: process.env.DATABASE_URL || '',
+  rapidApiKey: process.env.RAPIDAPI_KEY || '',
+  rapidApiHost: 'sportapi7.p.rapidapi.com',
 };

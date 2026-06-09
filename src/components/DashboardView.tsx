@@ -9,7 +9,7 @@ import { TODAY_SCHEDULE } from '../initialData';
 interface DashboardViewProps {
   user: UserProfile;
   onNavigate: (view: string) => void;
-  onUpdatePoints: (pts: number) => void;
+  onUpdatePoints?: (pts: number) => void;
 }
 
 export default function DashboardView({ user, onNavigate, onUpdatePoints }: DashboardViewProps) {

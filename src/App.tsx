@@ -3,10 +3,8 @@ import {
   Tv, Calendar, Trophy, User, LogOut, Award, Bell, Menu, X, 
   ChevronRight, ClipboardList, Shield, Flame
 } from 'lucide-react';
-import { ViewType, UserProfile, MatchPrediction } from './types';
-import { INITIAL_USER, INITIAL_PREDICTIONS, PAST_PREDICTIONS, LEADERBOARD_DATA } from './initialData';
+import { ViewType, UserProfile } from './types';
 
-// Sub-views
 import LoginView from './components/LoginView';
 import DashboardView from './components/DashboardView';
 import PredictionsView from './components/PredictionsView';
@@ -14,70 +12,70 @@ import KnockoutsView from './components/KnockoutsView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
 
+function mapUser(raw: any): UserProfile {
+  return {
+    username: raw.username,
+    fullName: raw.fullName,
+    email: raw.email || '',
+    studentId: raw.studentId || '',
+    points: raw.points || 0,
+    rank: raw.rank || 1,
+    accuracy: raw.accuracy || 0,
+    predictionsCount: raw.predictionsCount || 0,
+    winStreak: raw.winStreak || 0,
+    classYear: raw.classYear || '',
+    department: raw.department || '',
+    avatarUrl: raw.avatarUrl || '',
+  };
+}
+
 export default function App() {
-  // Authentication states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
-
-  // Active view router
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [activeView, setActiveView] = useState<ViewType>('DASHBOARD');
-
-  // Sidebar toggler for medium screens
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Synced predictions
-  const [pastPredictions, setPastPredictions] = useState<MatchPrediction[]>([]);
-
-  // Persistent storage loaders
   useEffect(() => {
-    const authUser = localStorage.getItem('user_authenticated');
-    if (authUser) {
-      setIsAuthenticated(true);
-      const storedPoints = localStorage.getItem('user_points');
-      if (storedPoints) {
-        setUser(prev => ({ ...prev, points: parseInt(storedPoints) }));
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.PROD ? 'https://cup-predict.onrender.com/api' : '/api'}/auth/me`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) throw new Error('Session expired');
+        const data = await res.json();
+        setUser(mapUser(data.user));
+        setIsAuthenticated(true);
+      } catch {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('user_profile');
+      } finally {
+        setIsLoading(false);
       }
-    }
-
-    const storedPast = localStorage.getItem('past_predictions');
-    if (storedPast) {
-      setPastPredictions(JSON.parse(storedPast));
-    } else {
-      setPastPredictions(PAST_PREDICTIONS);
-      localStorage.setItem('past_predictions', JSON.stringify(PAST_PREDICTIONS));
-    }
+    })();
   }, []);
 
-  const handleLogin = (username: string) => {
-    localStorage.setItem('user_authenticated', username);
-    localStorage.setItem('user_points', INITIAL_USER.points.toString());
-    setUser({ ...INITIAL_USER, username });
+  const handleLogin = (userData: any, token: string) => {
+    localStorage.setItem('jwt_token', token);
+    localStorage.setItem('user_profile', JSON.stringify(userData));
+    setUser(mapUser(userData));
     setIsAuthenticated(true);
     setActiveView('DASHBOARD');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user_authenticated');
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_profile');
     setIsAuthenticated(false);
+    setUser(null);
   };
 
-  const handleUpdatePoints = (pts: number) => {
-    setUser(prev => {
-      const nextPoints = prev.points + pts;
-      localStorage.setItem('user_points', nextPoints.toString());
-      return { ...prev, points: nextPoints };
-    });
-  };
-
-  const handleAddPastPredictions = (preds: MatchPrediction[]) => {
-    setPastPredictions(prev => {
-      const updated = [...preds, ...prev];
-      localStorage.setItem('past_predictions', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  // Nav mapping list helper
   const NAV_ITEMS = [
     { id: 'DASHBOARD', label: 'Welcome Hub', icon: Tv },
     { id: 'PREDICTIONS', label: 'Group Predictions', icon: Calendar },
@@ -86,15 +84,24 @@ export default function App() {
     { id: 'PROFILE', label: 'My profile', icon: User },
   ];
 
-  // If not logged in, render stadium login screen!
-  if (!isAuthenticated) {
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen bg-background font-sans text-zinc-400 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
     return <LoginView onLoginSuccess={handleLogin} />;
   }
 
   return (
     <div className="relative min-h-screen bg-background font-sans text-zinc-400 overflow-x-hidden">
       
-      {/* 1. Mobile Top Bar Header */}
       <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-zinc-950 border-b border-zinc-500/15 fixed top-0 left-0 right-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
@@ -110,15 +117,19 @@ export default function App() {
             {user.points.toLocaleString()} PTS
           </span>
           <div className="w-8 h-8 overflow-hidden border border-zinc-500/15">
-            <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
+            {user.avatarUrl ? (
+              <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
+            ) : (
+              <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+                {user.fullName?.charAt(0) || user.username?.charAt(0) || '?'}
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* 2. Left Desktop Side Drawer Column */}
       <aside className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 w-72 bg-zinc-950 border-r border-zinc-500/15 flex flex-col justify-between p-8 transition-transform duration-300 transform lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         
-        {/* Upper Brand / Logo */}
         <div className="space-y-12">
           <div className="flex items-center justify-between">
             <h1 className="font-black text-2xl text-zinc-400 tracking-tighter uppercase">CUP PREDICT&trade;</h1>
@@ -127,7 +138,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Nav Items */}
           <nav className="space-y-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -149,12 +159,17 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Lower Student Identity block */}
         <div className="space-y-6">
           <div className="bg-zinc-900 border border-zinc-500/10 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 overflow-hidden border border-zinc-500/10 shadow-lg">
-                <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
+                {user.avatarUrl ? (
+                  <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
+                ) : (
+                  <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+                    {user.fullName?.charAt(0) || user.username?.charAt(0) || '?'}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="font-black text-xs uppercase tracking-wider text-zinc-300">{user.fullName}</p>
@@ -176,10 +191,8 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Content Workspace viewport */}
       <div className="lg:pl-72 pt-16 lg:pt-0">
         
-        {/* Upper TopBar Header dashboard status (Desktop only) */}
         <header className="hidden lg:flex items-center justify-between px-10 py-6 bg-zinc-950 border-b border-zinc-500/10 z-20">
           <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 tracking-widest uppercase">
             <span>WESTFIELD UNIVERSITY</span>
@@ -187,7 +200,6 @@ export default function App() {
             <span className="text-zinc-350 font-black">{activeView}</span>
           </div>
 
-          {/* Quick Metrics & Notification Icon */}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
               <div className="text-right">
@@ -201,13 +213,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick alert bar indicator */}
             <div className="relative group">
               <button className="bg-zinc-900 hover:bg-zinc-800 p-2 text-zinc-500 hover:text-zinc-300 transition-colors relative cursor-pointer border border-zinc-500/10">
                 <Bell size={16} />
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-600 animate-pulse" />
               </button>
-              {/* Notification hover menu dropdown */}
               <div className="absolute right-0 top-11 bg-zinc-950 border border-zinc-500/10 w-80 shadow-2xl p-4 invisible group-hover:visible transition-all duration-150 z-50">
                 <h4 className="font-black text-xs text-zinc-400 uppercase tracking-widest mb-3 pb-1.5 border-b border-zinc-500/10">CAMPUS ALERTS</h4>
                 <div className="space-y-3 font-medium text-xs text-zinc-500">
@@ -231,48 +241,32 @@ export default function App() {
           </div>
         </header>
 
-        {/* Dynamic viewport renderer based on active navigation component */}
         <main className="p-6 md:p-10 max-w-7xl mx-auto min-h-[calc(100vh-80px)] pb-24 lg:pb-12">
           {activeView === 'DASHBOARD' && (
             <DashboardView 
               user={user} 
               onNavigate={(view) => setActiveView(view as ViewType)}
-              onUpdatePoints={handleUpdatePoints}
             />
           )}
 
           {activeView === 'PREDICTIONS' && (
-            <PredictionsView 
-              initialFixtures={INITIAL_PREDICTIONS}
-              onUpdatePoints={handleUpdatePoints}
-              onAddPastPredictions={handleAddPastPredictions}
-            />
+            <PredictionsView />
           )}
 
           {activeView === 'KNOCKOUTS' && (
-            <KnockoutsView 
-              onUpdatePoints={handleUpdatePoints}
-            />
+            <KnockoutsView username={user.username} />
           )}
 
           {activeView === 'LEADERBOARD' && (
-            <LeaderboardView 
-              leaderboardData={LEADERBOARD_DATA}
-              currentUserRank={user.rank}
-              currentUserPoints={user.points}
-            />
+            <LeaderboardView currentUser={user} />
           )}
 
           {activeView === 'PROFILE' && (
-            <ProfileView 
-              user={user}
-              pastPredictions={pastPredictions}
-            />
+            <ProfileView user={user} />
           )}
         </main>
       </div>
 
-      {/* 4. Mobile Bottom Nav Sticky controls bar */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-500/10 px-2 py-1.5 z-40 flex justify-around shadow-2xl">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;

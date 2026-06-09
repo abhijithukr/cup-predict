@@ -1,9 +1,18 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
-import { generateToken } from '../middleware/auth';
+import { generateToken, authMiddleware } from '../middleware/auth';
 
 const router = Router();
+
+async function enrichUser(user: any) {
+  const predictionsCount = await prisma.prediction.count({ where: { userId: user.id } });
+  const correctPredictions = await prisma.prediction.count({ where: { userId: user.id, status: 'CORRECT' } });
+  const accuracy = predictionsCount > 0 ? Math.round((correctPredictions / predictionsCount) * 100) : 0;
+  const rank = (await prisma.user.count({ where: { points: { gt: user.points } } })) + 1;
+  const { passwordHash, ...safe } = user;
+  return { ...safe, accuracy, predictionsCount, rank };
+}
 
 router.post('/register', async (req: Request, res: Response) => {
   try {
@@ -23,7 +32,7 @@ router.post('/register', async (req: Request, res: Response) => {
     });
 
     const token = generateToken({ userId: user.id, username: user.username });
-    res.status(201).json({ token, user: sanitizeUser(user) });
+    res.status(201).json({ token, user: await enrichUser(user) });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -47,16 +56,25 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const token = generateToken({ userId: user.id, username: user.username });
-    res.json({ token, user: sanitizeUser(user) });
+    res.json({ token, user: await enrichUser(user) });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
-function sanitizeUser(user: any) {
-  const { passwordHash, ...safe } = user;
-  return safe;
-}
+router.get('/me', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json({ user: await enrichUser(user) });
+  } catch (err) {
+    console.error('Me error:', err);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
 
 export default router;
