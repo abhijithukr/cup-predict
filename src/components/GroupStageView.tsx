@@ -235,7 +235,7 @@ export default function GroupStageView() {
                                   ? r === 1
                                     ? 'bg-yellow-500 text-black border-yellow-500'
                                     : r === 2
-                                    ? 'bg-zinc-400 text-black border-zinc-400'
+                                    ? 'bg-zinc-200 text-black border-zinc-200'
                                     : 'bg-amber-700 text-white border-amber-700'
                                   : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
                               }`}
@@ -256,7 +256,7 @@ export default function GroupStageView() {
                   <span className="text-yellow-500">1st: {getTeamName(groupPicks.first)}</span>
                 )}
                 {groupPicks.second && (
-                  <span className="text-zinc-400">2nd: {getTeamName(groupPicks.second)}</span>
+                  <span className="text-zinc-200">2nd: {getTeamName(groupPicks.second)}</span>
                 )}
                 {groupPicks.third && (
                   <span className="text-amber-600">3rd: {getTeamName(groupPicks.third)}</span>
