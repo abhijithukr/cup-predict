@@ -7,7 +7,7 @@ export interface UserProfile {
   studentId: string;
   points: number;
   rank: number;
-  accuracy: number;
+  accuracy: number | null;
   predictionsCount: number;
   winStreak: number;
   classYear: string;

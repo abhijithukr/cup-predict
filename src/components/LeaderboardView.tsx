@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Trophy, Medal, Award, Flame, Star } from 'lucide-react';
 import { getLeaderboard } from '../api';
+import { getAvatarUrl } from '../avatar';
 
 interface LeaderboardViewProps {
   currentUser: { username: string; points: number; rank: number; department: string; avatarUrl: string };
@@ -237,13 +238,7 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-50">
-                          {item.avatarUrl ? (
-                            <img className="w-full h-full object-cover" src={item.avatarUrl} alt="Predictor avatar" />
-                          ) : (
-                            <div className="w-full h-full bg-[#eff4ff] text-[#0051d5] flex items-center justify-center font-extrabold text-xs">
-                              {item.username.substring(0,2).toUpperCase()}
-                            </div>
-                          )}
+                          <img className="w-full h-full object-cover" src={getAvatarUrl(item.fullName || item.username, item.avatarUrl)} alt="avatar" />
                         </div>
                         <span className={`font-bold text-sm leading-none ${item.isCurrentUser ? 'text-[#006e2f]' : 'text-[#0b1c30]'}`}>
                           {item.username}
@@ -257,7 +252,7 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
 
                     <td className="py-4 px-6 text-center">
                       <span className="font-mono text-sm font-bold bg-[#eff4ff] text-[#0b1c30] px-2.5 py-1 rounded-md border border-gray-100">
-                        {item.correctPercentage || 0}%
+                        {item.correctPercentage !== null && item.correctPercentage !== undefined ? `${item.correctPercentage}%` : '—'}
                       </span>
                     </td>
 

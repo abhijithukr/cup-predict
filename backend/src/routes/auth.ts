@@ -8,7 +8,12 @@ const router = Router();
 async function enrichUser(user: any) {
   const predictionsCount = await prisma.prediction.count({ where: { userId: user.id } });
   const correctPredictions = await prisma.prediction.count({ where: { userId: user.id, status: 'CORRECT' } });
-  const accuracy = predictionsCount > 0 ? Math.round((correctPredictions / predictionsCount) * 100) : 0;
+  const finishedCount = await prisma.fixture.count({
+    where: { isClosed: true, actualScoreA: { not: null }, actualScoreB: { not: null } },
+  });
+  const accuracy = finishedCount > 0 && predictionsCount > 0
+    ? Math.round((correctPredictions / predictionsCount) * 100)
+    : null;
   const rank = (await prisma.user.count({ where: { points: { gt: user.points } } })) + 1;
   const { passwordHash, ...safe } = user;
   return { ...safe, accuracy, predictionsCount, rank };

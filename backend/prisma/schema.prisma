@@ -44,6 +44,9 @@ model Fixture {
   teamB        Team         @relation("AwayTeam", fields: [teamBCode], references: [code])
   kickoffTime  DateTime
   isClosed     Boolean      @default(false)
+  status       String       @default("scheduled")
+  liveScoreA   Int?
+  liveScoreB   Int?
   actualScoreA Int?
   actualScoreB Int?
 

@@ -3,6 +3,7 @@ import { UserProfile, MatchPrediction } from '../types';
 import { FLAG_MAP } from '../initialData';
 import { getPredictionHistory } from '../api';
 import { Award, Star, History, Calendar, TrendingUp, Trophy } from 'lucide-react';
+import { getAvatarUrl } from '../avatar';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -65,13 +66,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
           
           <div className="relative">
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-[#006e2f] bg-white overflow-hidden shadow-md">
-              {user.avatarUrl ? (
-                <img className="w-full h-full object-cover" src={user.avatarUrl} alt="Avatar" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-3xl font-black text-zinc-400 bg-zinc-100">
-                  {user.fullName?.charAt(0) || '?'}
-                </div>
-              )}
+              <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="Avatar" />
             </div>
             <span className="absolute bottom-1 right-1 bg-[#006e2f] text-white p-1 rounded-full border border-white">
               <Star size={16} fill="currentColor" />
@@ -95,7 +90,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
               <span>&bull;</span>
               <div className="flex items-center gap-1">
                 <Award size={14} className="text-[#daa300]" />
-                <span>Westfield Football League</span>
+                <span>CET Football League</span>
               </div>
               <span>&bull;</span>
               <div className="flex items-center gap-1">
@@ -108,7 +103,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
           <div className="bg-[#eff4ff]/60 border border-[#bccbb9]/20 p-5 rounded-2xl flex flex-row md:flex-col gap-6 justify-around w-full md:w-auto text-center md:text-left shrink-0">
             <div>
               <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Prediction Accuracy</p>
-              <div className="text-3xl font-black text-[#006e2f]">{user.accuracy}%</div>
+              <div className="text-3xl font-black text-[#006e2f]">{user.accuracy !== null ? `${user.accuracy}%` : '—'}</div>
             </div>
             <div>
               <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Rank</p>

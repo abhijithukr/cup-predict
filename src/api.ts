@@ -86,8 +86,22 @@ export async function getBracket(username: string) {
   return handleResponse(res);
 }
 
+export async function getNextFixture() {
+  const res = await fetch(`${API_BASE}/fixtures/next`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function getFixtureStats(fixtureId: string) {
+  const res = await fetch(`${API_BASE}/fixtures/${fixtureId}/stats`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
 export async function getLeaderboard() {
-  const res = await fetch(`${API_BASE}/leaderboard`, {
+  const res = await fetch(`${API_BASE}/leaderboard?exclude=testuser`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(res);

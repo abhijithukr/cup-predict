@@ -80,7 +80,12 @@ async function upsertEvent(ev: {
 
   const kickoffTime = new Date(ev.startTimestamp * 1000);
   const isFinished = ev.status.code === 100;
+  const isLive = ev.status.type === 'inprogress';
   const fixtureId = `ext_${ev.id}`;
+
+  let status = 'scheduled';
+  if (isLive) status = 'live';
+  else if (isFinished) status = 'finished';
 
   const fixtureData: Record<string, unknown> = {
     groupName,
@@ -88,11 +93,16 @@ async function upsertEvent(ev: {
     teamBCode: awayCode,
     kickoffTime,
     isClosed: isFinished,
+    status,
   };
 
-  if (isFinished && ev.homeScore?.current != null && ev.awayScore?.current != null) {
-    fixtureData.actualScoreA = ev.homeScore.current;
-    fixtureData.actualScoreB = ev.awayScore.current;
+  if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
+    fixtureData.liveScoreA = ev.homeScore.current;
+    fixtureData.liveScoreB = ev.awayScore.current;
+    if (isFinished) {
+      fixtureData.actualScoreA = ev.homeScore.current;
+      fixtureData.actualScoreB = ev.awayScore.current;
+    }
   }
 
   await prisma.fixture.upsert({
@@ -140,9 +150,12 @@ export async function syncLiveScores() {
 
       if (ev.status.code === 100) {
         updates.isClosed = true;
+        updates.status = 'finished';
         if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
           updates.actualScoreA = ev.homeScore.current;
           updates.actualScoreB = ev.awayScore.current;
+          updates.liveScoreA = ev.homeScore.current;
+          updates.liveScoreB = ev.awayScore.current;
         }
       }
 
@@ -160,10 +173,21 @@ export async function syncLiveScores() {
       if (!existing) continue;
 
       const updates: Record<string, unknown> = {};
-      if (ev.homeScore?.current != null && ev.awayScore?.current != null && ev.status.type === 'finished') {
+
+      if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
+        updates.liveScoreA = ev.homeScore.current;
+        updates.liveScoreB = ev.awayScore.current;
+      }
+
+      if (ev.status.type === 'inprogress') {
+        updates.status = 'live';
+      } else if (ev.status.type === 'finished' || ev.status.code === 100) {
         updates.isClosed = true;
-        updates.actualScoreA = ev.homeScore.current;
-        updates.actualScoreB = ev.awayScore.current;
+        updates.status = 'finished';
+        if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
+          updates.actualScoreA = ev.homeScore.current;
+          updates.actualScoreB = ev.awayScore.current;
+        }
       }
 
       if (Object.keys(updates).length > 0) {

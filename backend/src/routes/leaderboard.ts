@@ -3,11 +3,19 @@ import { prisma } from '../lib/prisma';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
+    const exclude = req.query.exclude as string | undefined;
+    const whereFilter = exclude ? { username: { not: exclude } } : {};
+
     const users = await prisma.user.findMany({
+      where: whereFilter,
       orderBy: { points: 'desc' },
       include: { _count: { select: { predictions: true } } },
+    });
+
+    const finishedCount = await prisma.fixture.count({
+      where: { isClosed: true, actualScoreA: { not: null }, actualScoreB: { not: null } },
     });
 
     const leaderboard = await Promise.all(
@@ -16,9 +24,9 @@ router.get('/', async (_req: Request, res: Response) => {
           where: { userId: user.id, status: 'CORRECT' },
         });
         const totalPredictions = user._count.predictions;
-        const correctPercentage = totalPredictions > 0
+        const correctPercentage = finishedCount > 0 && totalPredictions > 0
           ? Math.round((correctCount / totalPredictions) * 100)
-          : 0;
+          : null;
 
         return {
           id: user.id,

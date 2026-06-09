@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Tv, Calendar, Trophy, User, LogOut, Award, Bell, Menu, X, 
-  ChevronRight, ClipboardList, Shield, Flame
+  ChevronRight,   ClipboardList, Shield, Flame, User
 } from 'lucide-react';
 import { ViewType, UserProfile } from './types';
 
@@ -11,6 +11,7 @@ import PredictionsView from './components/PredictionsView';
 import KnockoutsView from './components/KnockoutsView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
+import { getAvatarUrl } from './avatar';
 
 function mapUser(raw: any): UserProfile {
   return {
@@ -20,7 +21,7 @@ function mapUser(raw: any): UserProfile {
     studentId: raw.studentId || '',
     points: raw.points || 0,
     rank: raw.rank || 1,
-    accuracy: raw.accuracy || 0,
+    accuracy: raw.accuracy !== null && raw.accuracy !== undefined ? raw.accuracy : null,
     predictionsCount: raw.predictionsCount || 0,
     winStreak: raw.winStreak || 0,
     classYear: raw.classYear || '',
@@ -110,20 +111,14 @@ export default function App() {
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <span className="font-black text-xl text-zinc-400 tracking-tighter uppercase select-none">CUP PREDICT&trade;</span>
+          <span className="font-black text-xl text-zinc-400 tracking-tighter uppercase select-none">CET CUP&trade;</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="bg-zinc-900 text-zinc-300 font-black text-[10px] uppercase tracking-widest px-2.5 py-1 border border-zinc-500/15">
             {user.points.toLocaleString()} PTS
           </span>
           <div className="w-8 h-8 overflow-hidden border border-zinc-500/15">
-            {user.avatarUrl ? (
-              <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
-            ) : (
-              <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
-                {user.fullName?.charAt(0) || user.username?.charAt(0) || '?'}
-              </div>
-            )}
+            <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
           </div>
         </div>
       </header>
@@ -132,7 +127,7 @@ export default function App() {
         
         <div className="space-y-12">
           <div className="flex items-center justify-between">
-            <h1 className="font-black text-2xl text-zinc-400 tracking-tighter uppercase">CUP PREDICT&trade;</h1>
+            <h1 className="font-black text-2xl text-zinc-400 tracking-tighter uppercase">CET CUP&trade;</h1>
             <button className="lg:hidden p-1 text-zinc-500 hover:text-zinc-400" onClick={() => setIsMobileMenuOpen(false)}>
               <X size={20} />
             </button>
@@ -163,13 +158,7 @@ export default function App() {
           <div className="bg-zinc-900 border border-zinc-500/10 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 overflow-hidden border border-zinc-500/10 shadow-lg">
-                {user.avatarUrl ? (
-                  <img className="w-full h-full object-cover" src={user.avatarUrl} alt="user avatar" />
-                ) : (
-                  <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
-                    {user.fullName?.charAt(0) || user.username?.charAt(0) || '?'}
-                  </div>
-                )}
+                <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
               </div>
               <div>
                 <p className="font-black text-xs uppercase tracking-wider text-zinc-300">{user.fullName}</p>
@@ -195,7 +184,7 @@ export default function App() {
         
         <header className="hidden lg:flex items-center justify-between px-10 py-6 bg-zinc-950 border-b border-zinc-500/10 z-20">
           <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 tracking-widest uppercase">
-            <span>WESTFIELD UNIVERSITY</span>
+            <span>COLLEGE OF ENGINEERING TRIVANDRUM</span>
             <ChevronRight size={12} className="text-zinc-650" />
             <span className="text-zinc-350 font-black">{activeView}</span>
           </div>
