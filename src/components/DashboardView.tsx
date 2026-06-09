@@ -117,7 +117,7 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
         <div className="space-y-6">
           {/* Welcome Header */}
           <header className="mb-2">
-            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-2">Welcome, Alex&trade; ⚽</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-2">Welcome, {user.fullName}&trade; ⚽</h2>
             <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">The elite collegiate prediction arena</p>
           </header>
 
