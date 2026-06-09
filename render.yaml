@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: cup-predict-api
+    runtime: node
+    repo: https://github.com/abhijithukr/cup-predict
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://fifaworldcup.dpdns.org
+      - key: NODE_VERSION
+        value: 20

@@ -19,7 +19,7 @@ router.get('/', async (_req: Request, res: Response) => {
       },
     });
 
-    const leaderboard = users.map((user, index) => {
+    const leaderboard = users.map((user: { id: string; username: string; fullName: string; department: string; points: number; winStreak: number; avatarUrl: string | null; _count: { predictions: number } }, index: number) => {
       const correctCount = 0;
       const totalPredictions = user._count.predictions;
       const correctPercentage = totalPredictions > 0
