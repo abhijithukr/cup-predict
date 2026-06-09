@@ -177,8 +177,8 @@ input::placeholder {
 }
 
 /* Warm color redirections for residual green brand accent colors */
-[class*="[#006e2f]"],
-[class*="006e2f"] {
+[class*="bg-[#006e2f]"],
+[class*="bg-006e2f"] {
   background-color: #1d1409 !important;
   color: #faf6f0 !important;
   border-color: #1d1409 !important;
