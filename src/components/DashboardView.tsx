@@ -3,8 +3,8 @@ import {
   TrendingUp, Award, Clock, History, PlaySquare, Check, Flame, 
   Tv, Trophy, MessageSquare, Plus, ChevronUp, AlertCircle 
 } from 'lucide-react';
-import { MatchPrediction, UserProfile } from '../types';
-import { TODAY_SCHEDULE } from '../initialData';
+import { UserProfile } from '../types';
+import { getFixtures, submitPrediction } from '../api';
 
 interface DashboardViewProps {
   user: UserProfile;
@@ -25,11 +25,23 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
   const [isNextMatchLocked, setIsNextMatchLocked] = useState(false);
 
   // Today's fixtures values
-  const [fixtures, setFixtures] = useState<MatchPrediction[]>(TODAY_SCHEDULE);
-  const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string; locked: boolean }>>({
-    today_1: { a: '', b: '', locked: false },
-    today_2: { a: '', b: '', locked: false }
-  });
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string; locked: boolean }>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getFixtures();
+        const list = data.fixtures || [];
+        setFixtures(list);
+        const init: Record<string, { a: string; b: string; locked: boolean }> = {};
+        list.forEach((f: any) => { init[f.id] = { a: '', b: '', locked: false }; });
+        setFixtureScores(init);
+      } catch {
+        // fallback empty
+      }
+    })();
+  }, []);
 
   // Fast prediction widget on live match
   const [selectedFastPredict, setSelectedFastPredict] = useState<string | null>(null);
@@ -61,18 +73,23 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
   }, []);
 
   // Handler for Today's Schedule predictions
-  const handleFixturePredict = (fixtureId: string) => {
+  const handleFixturePredict = async (fixtureId: string) => {
     const spec = fixtureScores[fixtureId];
-    if (!spec.a.trim() || !spec.b.trim()) {
+    if (!spec?.a?.trim() || !spec?.b?.trim()) {
       alert('Please enter correct scores for both teams.');
       return;
     }
-    setFixtureScores(prev => ({
-      ...prev,
-      [fixtureId]: { ...prev[fixtureId], locked: true }
-    }));
-    onUpdatePoints(50); // Small participation points
-    alert('Prediction locked! You earned +50 participation points!');
+    try {
+      await submitPrediction(fixtureId, parseInt(spec.a), parseInt(spec.b));
+      setFixtureScores(prev => ({
+        ...prev,
+        [fixtureId]: { ...prev[fixtureId], locked: true }
+      }));
+      if (onUpdatePoints) onUpdatePoints(50);
+      alert('Prediction submitted! +50 participation points.');
+    } catch {
+      alert('Failed to submit prediction');
+    }
   };
 
   // Handler for Fast Predict clicks
@@ -493,30 +510,31 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {fixtures.map(f => {
+                {fixtures.slice(0, 6).map((f: any) => {
                   const s = fixtureScores[f.id] || { a: '', b: '', locked: false };
+                  const timeStr = f.kickoffTime ? new Date(f.kickoffTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                   return (
                     <div key={f.id} className="bg-zinc-950 p-5 border border-white/10 hover:border-white/30 transition-all rounded-none">
                       <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
-                        <span className="bg-zinc-900 text-zinc-300 border border-white/10 text-[9px] uppercase tracking-widest font-black px-2.5 py-0.5 rounded-none">{f.group}</span>
+                        <span className="bg-zinc-900 text-zinc-300 border border-white/10 text-[9px] uppercase tracking-widest font-black px-2.5 py-0.5 rounded-none">{f.groupName}</span>
                         <span className="text-zinc-500 font-bold text-[10px] flex items-center gap-1 uppercase tracking-widest">
                           <Clock size={12} />
-                          {f.kickoffTime}
+                          {timeStr}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <div className="flex flex-col items-center gap-1.5 flex-1 text-center">
                           <div className="w-10 h-10 rounded-none bg-zinc-900 border border-white/10 flex items-center justify-center shadow-inner">
-                            <span className="font-black text-emerald-400">{f.teamA === 'Germany' ? '🇩🇪' : (f.teamA === 'Argentina' ? '🇦🇷' : '⚽')}</span>
+                            <span className="font-black text-emerald-400">⚽</span>
                           </div>
-                          <span className="font-extrabold text-xs text-white uppercase tracking-wide">{f.teamA}</span>
+                          <span className="font-extrabold text-xs text-white uppercase tracking-wide">{f.teamA?.name || f.teamACode}</span>
                         </div>
                         <div className="text-zinc-600 font-black text-xs uppercase tracking-widest">VS</div>
                         <div className="flex flex-col items-center gap-1.5 flex-1 text-center">
                           <div className="w-10 h-10 rounded-none bg-zinc-900 border border-white/10 flex items-center justify-center shadow-inner">
-                            <span className="font-black text-amber-400">{f.teamB === 'Spain' ? '🇪🇸' : (f.teamB === 'Italy' ? '🇮🇹' : '⚽')}</span>
+                            <span className="font-black text-amber-400">⚽</span>
                           </div>
-                          <span className="font-extrabold text-xs text-white uppercase tracking-wide">{f.teamB}</span>
+                          <span className="font-extrabold text-xs text-white uppercase tracking-wide">{f.teamB?.name || f.teamBCode}</span>
                         </div>
                       </div>
 
@@ -525,7 +543,7 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
                         <input 
                           type="number" 
                           min="0"
-                          disabled={s.locked}
+                          disabled={s.locked || f.isClosed}
                           placeholder="0"
                           value={s.a}
                           onChange={(e) => setFixtureScores(prev => ({
@@ -538,7 +556,7 @@ export default function DashboardView({ user, onNavigate, onUpdatePoints }: Dash
                         <input 
                           type="number" 
                           min="0"
-                          disabled={s.locked}
+                          disabled={s.locked || f.isClosed}
                           placeholder="0"
                           value={s.b}
                           onChange={(e) => setFixtureScores(prev => ({
