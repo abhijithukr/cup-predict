@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  username     String       @unique
+  fullName     String
+  email        String       @unique
+  passwordHash String
+  studentId    String       @unique
+  points       Int          @default(0)
+  winStreak    Int          @default(0)
+  classYear    String
+  department   String
+  avatarUrl    String?
+  createdAt    DateTime     @default(now())
+
+  predictions Prediction[]
+  bracket     Bracket?
+}
+
+model Team {
+  code       String    @id
+  name       String    @unique
+  flagUrl    String
+  groupName  String
+
+  homeMatches Fixture[] @relation("HomeTeam")
+  awayMatches Fixture[] @relation("AwayTeam")
+}
+
+model Fixture {
+  id           String       @id @default(uuid())
+  groupName    String
+  teamACode    String
+  teamBCode    String
+  teamA        Team         @relation("HomeTeam", fields: [teamACode], references: [code])
+  teamB        Team         @relation("AwayTeam", fields: [teamBCode], references: [code])
+  kickoffTime  DateTime
+  isClosed     Boolean      @default(false)
+  actualScoreA Int?
+  actualScoreB Int?
+
+  predictions Prediction[]
+}
+
+model Prediction {
+  id           String   @id @default(uuid())
+  userId       String
+  fixtureId    String
+  user         User     @relation(fields: [userId], references: [id])
+  fixture      Fixture  @relation(fields: [fixtureId], references: [id])
+  scoreA       Int
+  scoreB       Int
+  pointsEarned Int      @default(0)
+  status       String   @default("OPEN")
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, fixtureId])
+}
+
+model Bracket {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  m1        String
+  m2        String
+  m3        String
+  m4        String
+  q1        String
+  q2        String
+  s1        String
+  champion  String
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
