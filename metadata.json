@@ -1,0 +1,6 @@
+{
+  "name": "CUP PREDICT",
+  "description": "The elite collegiate prediction arena. Predict tournament scores, build your champion bracket, and climb the campus leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

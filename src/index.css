@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+
+  --color-primary: #1d1409;
+  --color-primary-container: #f4e3d0;
+  --color-on-primary-container: #1d1409;
+  --color-secondary: #4b3d2e;
+  --color-secondary-container: #f4e3d0;
+  --color-on-secondary-container: #1d1409;
+  --color-tertiary: #4b3d2e;
+  --color-tertiary-container: #f4e3d0;
+  --color-on-tertiary-container: #1d1409;
+  --color-background: #faf6f0;
+  --color-surface: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fdfbfa;
+  --color-surface-container: #faf6f0;
+  --color-surface-container-high: #f4e3d0;
+  --color-surface-container-highest: #1d1409;
+  --color-on-surface: #1d1409;
+  --color-on-surface-variant: #4b3d2e;
+  --color-outline: #f4e3d0;
+  --color-outline-variant: #4b3d2e;
+  --color-error: #ef4444;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
+
+  /* Custom overrides map for rich light beige themed panels */
+  --color-zinc-950: #ffffff; /* Contrast white inside panels */
+  --color-zinc-900: #faf6f0; /* Soft warm light-beige base */
+  --color-zinc-800: #f4e3d0; /* Rich brand warm beige */
+  --color-zinc-700: #eada9e; /* Muted element border */
+  --color-zinc-650: #d6c3ad; /* Darker outline borders */
+  --color-zinc-600: #4b3d2e; /* Slate/brown body copy */
+  --color-zinc-500: #4b3d2e; /* Muted titles and details */
+  --color-zinc-400: #1d1409; /* Deep orange/brown headers */
+  --color-zinc-300: #1d1409; /* Extra contrast text */
+  --color-black: #1d1409; /* Solid deep brown text element */
+}
+
+/* Stadium backdrops & Pitch Patterns with modern light look */
+.stadium-overlay {
+    background: linear-gradient(rgba(250, 246, 240, 0.8), rgba(244, 227, 208, 0.95));
+    backdrop-filter: blur(8px);
+}
+
+.pitch-lines {
+    background-image: radial-gradient(circle at 50% 50%, transparent 20%, rgba(29, 20, 9, 0.03) 21%, transparent 22%),
+                      linear-gradient(to right, rgba(29, 20, 9, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(29, 20, 9, 0.03) 1px, transparent 1px);
+    background-size: 100px 100px, 50px 50px, 50px 50px;
+}
+
+.pitch-pattern {
+    background-image: radial-gradient(circle at 2px 2px, rgba(29, 20, 9, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(29, 20, 9, 0.08);
+}
+
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 227, 208, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(244, 227, 208, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 227, 208, 0); }
+}
+
+.animate-pulse-green {
+    animation: pulse-green 2s infinite;
+}
+
+.trophy-glow {
+    box-shadow: 0 0 20px rgba(244, 227, 208, 0.2);
+}
+
+/* Global design rules mapping to Mozilla Headline & Brand Kit */
+h1, h2, h3, h4, h5, h6, p, span, div, input, select, textarea, label, button, a {
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), system-ui, sans-serif !important;
+  letter-spacing: -0.03em;
+  color: #1d1409 !important; /* Force all headers to deep brown */
+}
+
+/* GLOBAL BROWN TEXT FORCE FOR ALL ELEMENT BASES AND UTILITY CLASSES */
+body, p, span, input, select, textarea, label, button, a {
+  color: #1d1409; /* Deep brown */
+}
+
+/* Force standard text color utility overrides to convert to elegant brown tones */
+.text-white,
+.text-zinc-50,
+.text-zinc-100,
+.text-zinc-200,
+.text-zinc-300,
+.text-zinc-400,
+.text-zinc-500,
+.text-zinc-650,
+.text-zinc-600,
+.text-zinc-700,
+.text-zinc-800,
+.text-zinc-900,
+.text-zinc-950,
+.text-gray-100,
+.text-gray-200,
+.text-gray-300,
+.text-gray-400,
+.text-gray-500,
+.text-gray-600,
+.text-gray-700,
+.text-gray-800,
+.text-gray-900,
+.text-black,
+.text-neutral-500,
+.text-neutral-600,
+.text-slate-500,
+.text-slate-600 {
+  color: #1d1409 !important; /* High-contrast Deep Brown */
+}
+
+/* Secondary, lighter, or muted typography classes use refined medium slate-brown */
+.text-zinc-400,
+.text-zinc-500,
+.text-zinc-600,
+.text-[#3d4a3d],
+.text-zinc-650,
+.text-gray-400,
+.text-gray-500,
+.text-gray-600,
+.text-slate-400,
+.text-slate-500,
+.text-slate-600,
+.text-neutral-400,
+.text-neutral-500 {
+  color: #4b3d2e !important; /* Medium Slate-Brown */
+}
+
+/* Hover classes should hover into deep brown */
+.hover\:text-white:hover {
+  color: #1d1409 !important;
+}
+
+/* Preserving readable high-contrast pale-beige/light-orange text specifically on deep brown or custom dark buttons/badges */
+button .text-white,
+button.bg-zinc-300,
+button.bg-zinc-800,
+.bg-zinc-900 .text-zinc-300,
+.bg-zinc-950 .text-zinc-300,
+button.bg-primary .text-white,
+button.bg-secondary .text-white,
+button.bg-zinc-350 .text-zinc-900,
+.bg-zinc-300 .text-zinc-900 {
+  color: #faf6f0 !important;
+}
+
+/* Direct light button text style */
+.bg-zinc-300 .text-zinc-900 {
+  color: #faf6f0 !important;
+}
+
+/* Redefine input outline / border colors */
+input, select, textarea {
+  border-color: rgba(75, 61, 46, 0.2) !important;
+  color: #1d1409 !important;
+}
+input::placeholder {
+  color: rgba(75, 61, 46, 0.5) !important;
+}
+
+/* Warm color redirections for residual green brand accent colors */
+[class*="[#006e2f]"],
+[class*="006e2f"] {
+  background-color: #1d1409 !important;
+  color: #faf6f0 !important;
+  border-color: #1d1409 !important;
+}
+
+div[class*="text-[#006e2f]"],
+span[class*="text-[#006e2f]"],
+p[class*="text-[#006e2f]"],
+svg[class*="text-[#006e2f]"],
+div[class*="text-emerald-"],
+span[class*="text-emerald-"] {
+  color: #1d1409 !important;
+}
+
+/* Correct green backgrounds & green indicators to matches */
+.bg-[#000000] .text-white,
+.bg-emerald-500,
+.bg-emerald-400,
+.bg-green-500,
+.bg-green-600,
+.bg-green-100,
+[class*="bg-emerald-"],
+[class*="bg-green-"] {
+  background-color: #4b3d2e !important;
+  color: #faf6f0 !important;
+}
+
+/* Redirection of old light blue backgrounds '#eff4ff' to soft/warm light-beige base */
+[class*="[#eff4ff]"],
+[class*="eff4ff"] {
+  background-color: #f4e3d0 !important;
+  color: #1d1409 !important;
+}
+
+div[class*="[#eff4ff]"],
+div[class*="eff4ff"],
+section[class*="[#eff4ff]"],
+span[class*="[#eff4ff]"] {
+  background-image: none !important;
+  background-color: #f4e3d0 !important;
+  border-color: rgba(75, 61, 46, 0.1) !important;
+}
+
+/* Redirection of outline/border elements */
+[class*="border-[#bccbb9]"],
+.border-gray-200,
+.border-gray-300,
+.border-white\/10,
+.border-zinc-500\/10 {
+  border-color: rgba(75, 61, 46, 0.15) !important;
+}
+
+/* Scrollbar customization matching deep orange concept */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #100a04;
+}
+::-webkit-scrollbar-thumb {
+  background: #4b3d2e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f4e3d0;
+}
