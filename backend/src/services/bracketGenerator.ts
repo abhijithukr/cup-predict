@@ -10,6 +10,8 @@ export interface BracketMatch {
   match: number;
   teamA: string | null;
   teamB: string | null;
+  teamAPosition: '1st' | '2nd' | '3rd' | null;
+  teamBPosition: '1st' | '2nd' | '3rd' | null;
   winner: string | null;
 }
 
@@ -21,120 +23,142 @@ export interface BracketTree {
   final: BracketMatch;
 }
 
-const R32_TEMPLATE: Array<{ a: string; b: string }> = [
-  { a: '1st:A', b: '2nd:B' },
-  { a: '1st:C', b: '2nd:D' },
-  { a: '1st:E', b: '2nd:F' },
-  { a: '1st:G', b: '2nd:H' },
-  { a: '1st:I', b: '2nd:J' },
-  { a: '1st:K', b: '2nd:L' },
-  { a: '1st:B', b: '3rd:1' },
-  { a: '1st:D', b: '3rd:2' },
-  { a: '1st:F', b: '3rd:3' },
-  { a: '1st:H', b: '3rd:4' },
-  { a: '1st:J', b: '3rd:5' },
-  { a: '1st:L', b: '3rd:6' },
-  { a: '2nd:A', b: '3rd:7' },
-  { a: '2nd:C', b: '3rd:8' },
-  { a: '2nd:E', b: '2nd:G' },
-  { a: '2nd:I', b: '2nd:K' },
-];
+interface TeamSlot {
+  code: string;
+  group: string;
+}
 
-const R16_FEEDS: Array<[number, number]> = [
-  [0, 12], [1, 13], [2, 14], [3, 15],
-  [4, 6], [5, 7], [8, 10], [9, 11],
-];
+function buildRound(matches: number): BracketMatch[] {
+  return Array.from({ length: matches }, (_, i) => ({
+    match: i + 1,
+    teamA: null,
+    teamB: null,
+    teamAPosition: null,
+    teamBPosition: null,
+    winner: null,
+  }));
+}
 
-const QF_FEEDS: Array<[number, number]> = [
-  [0, 1], [2, 3], [4, 5], [6, 7],
-];
-
-const SF_FEEDS: Array<[number, number]> = [
-  [0, 1], [2, 3],
-];
-
-function resolveTeam(spec: string, standings: GroupStanding[], thirdTeams: string[]): string | null {
-  const parts = spec.split(':');
-  if (parts.length !== 2) return null;
-  const [pos, groupOrIdx] = parts;
-  if (pos === '3rd') {
-    const idx = parseInt(groupOrIdx) - 1;
-    return thirdTeams[idx] || null;
-  }
-  const group = standings.find(s => s.groupName === `Group ${groupOrIdx}`);
-  if (!group) return null;
-  if (pos === '1st') return group.first;
-  if (pos === '2nd') return group.second;
-  return null;
+function feedNext(prev: BracketMatch[], next: BracketMatch[]) {
+  next.forEach((m, i) => {
+    const feedA = prev[i * 2];
+    const feedB = prev[i * 2 + 1];
+    m.teamA = feedA?.winner ?? null;
+    m.teamB = feedB?.winner ?? null;
+    m.teamAPosition = null;
+    m.teamBPosition = null;
+    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+  });
 }
 
 export function generateBracket(standings: GroupStanding[]): BracketTree {
-  const thirdTeams = standings
+  const sorted = [...standings].sort((a, b) => a.groupName.localeCompare(b.groupName));
+
+  const firstTeams: TeamSlot[] = sorted.map(s => ({ code: s.first, group: s.groupName }));
+  const secondTeams: TeamSlot[] = sorted.map(s => ({ code: s.second, group: s.groupName }));
+  const thirdTeams: TeamSlot[] = sorted
     .filter(s => s.third && s.thirdQualifies)
-    .map(s => s.third!)
-    .slice(0, 8);
+    .map(s => ({ code: s.third!, group: s.groupName }));
 
-  const roundOf32: BracketMatch[] = R32_TEMPLATE.map((slot, i) => ({
-    match: i + 1,
-    teamA: resolveTeam(slot.a, standings, thirdTeams),
-    teamB: resolveTeam(slot.b, standings, thirdTeams),
-    winner: null,
-  }));
+  const roundOf32: BracketMatch[] = [];
+  const usedFirst = new Set<number>();
+  const usedThird = new Set<number>();
 
-  const roundOf16: BracketMatch[] = R16_FEEDS.map(([a, b], i) => ({
-    match: i + 1,
-    teamA: roundOf32[a].winner,
-    teamB: roundOf32[b].winner,
-    winner: null,
-  }));
+  // Step 1: first vs third (cross-group)
+  for (let ti = 0; ti < thirdTeams.length; ti++) {
+    for (let fi = 0; fi < firstTeams.length; fi++) {
+      if (!usedFirst.has(fi) && firstTeams[fi].group !== thirdTeams[ti].group) {
+        roundOf32.push({
+          match: roundOf32.length + 1,
+          teamA: firstTeams[fi].code,
+          teamB: thirdTeams[ti].code,
+          teamAPosition: '1st',
+          teamBPosition: '3rd',
+          winner: null,
+        });
+        usedFirst.add(fi);
+        usedThird.add(ti);
+        break;
+      }
+    }
+  }
 
-  const quarterFinals: BracketMatch[] = QF_FEEDS.map(([a, b], i) => ({
-    match: i + 1,
-    teamA: roundOf16[a].winner,
-    teamB: roundOf16[b].winner,
-    winner: null,
-  }));
+  // Step 2: remaining first vs some second (cross-group)
+  const remainingFirst = firstTeams.filter((_, i) => !usedFirst.has(i));
+  const availableSecond = [...secondTeams];
 
-  const semiFinals: BracketMatch[] = SF_FEEDS.map(([a, b], i) => ({
-    match: i + 1,
-    teamA: quarterFinals[a].winner,
-    teamB: quarterFinals[b].winner,
-    winner: null,
-  }));
+  for (const ft of remainingFirst) {
+    const si = availableSecond.findIndex(s => s.group !== ft.group);
+    if (si !== -1) {
+      roundOf32.push({
+        match: roundOf32.length + 1,
+        teamA: ft.code,
+        teamB: availableSecond[si].code,
+        teamAPosition: '1st',
+        teamBPosition: '2nd',
+        winner: null,
+      });
+      availableSecond.splice(si, 1);
+    } else {
+      roundOf32.push({
+        match: roundOf32.length + 1,
+        teamA: ft.code,
+        teamB: availableSecond.shift()!.code,
+        teamAPosition: '1st',
+        teamBPosition: '2nd',
+        winner: null,
+      });
+    }
+  }
 
-  const finalMatch: BracketMatch = {
-    match: 1,
-    teamA: semiFinals[0].winner,
-    teamB: semiFinals[1].winner,
-    winner: null,
-  };
+  // Step 3: remaining second vs second
+  while (availableSecond.length >= 2) {
+    const a = availableSecond.shift()!;
+    const bi = availableSecond.findIndex(s => s.group !== a.group);
+    const b = bi !== -1 ? availableSecond.splice(bi, 1)[0] : availableSecond.shift()!;
+    roundOf32.push({
+      match: roundOf32.length + 1,
+      teamA: a.code,
+      teamB: b.code,
+      teamAPosition: '2nd',
+      teamBPosition: '2nd',
+      winner: null,
+    });
+  }
 
-  return { roundOf32, roundOf16, quarterFinals, semiFinals, final: finalMatch };
+  const roundOf16 = buildRound(8);
+  const quarterFinals = buildRound(4);
+  const semiFinals = buildRound(2);
+  const final = buildRound(1)[0];
+
+  feedNext(roundOf32, roundOf16);
+  feedNext(roundOf16, quarterFinals);
+  feedNext(quarterFinals, semiFinals);
+
+  semiFinals.forEach((m, i) => {
+    if (i === 0) { final.teamA = m.winner; }
+    else { final.teamB = m.winner; }
+  });
+  if (final.winner && final.winner !== final.teamA && final.winner !== final.teamB) {
+    final.winner = null;
+  }
+
+  return { roundOf32, roundOf16, quarterFinals, semiFinals, final };
 }
 
 export function advanceWinners(bracket: BracketTree): BracketTree {
   const b = JSON.parse(JSON.stringify(bracket)) as BracketTree;
-
-  b.roundOf16.forEach((m, i) => {
-    const feed = R16_FEEDS[i];
-    m.teamA = b.roundOf32[feed[0]].winner;
-    m.teamB = b.roundOf32[feed[1]].winner;
-  });
-
-  b.quarterFinals.forEach((m, i) => {
-    const feed = QF_FEEDS[i];
-    m.teamA = b.roundOf16[feed[0]].winner;
-    m.teamB = b.roundOf16[feed[1]].winner;
-  });
+  feedNext(b.roundOf32, b.roundOf16);
+  feedNext(b.roundOf16, b.quarterFinals);
+  feedNext(b.quarterFinals, b.semiFinals);
 
   b.semiFinals.forEach((m, i) => {
-    const feed = SF_FEEDS[i];
-    m.teamA = b.quarterFinals[feed[0]].winner;
-    m.teamB = b.quarterFinals[feed[1]].winner;
+    if (i === 0) b.final.teamA = m.winner;
+    else b.final.teamB = m.winner;
   });
-
-  b.final.teamA = b.semiFinals[0].winner;
-  b.final.teamB = b.semiFinals[1].winner;
+  if (b.final.winner && b.final.winner !== b.final.teamA && b.final.winner !== b.final.teamB) {
+    b.final.winner = null;
+  }
 
   return b;
 }

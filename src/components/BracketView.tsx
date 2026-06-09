@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Check, Award, ArrowRight, Lock, Info, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { Trophy, Check, Award, Lock, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import { getKnockoutPredictions, saveKnockoutPredictions, lockKnockoutPredictions } from '../api';
 
 const FIFA_TO_ISO: Record<string, string> = {
@@ -20,6 +20,8 @@ interface BracketMatch {
   match: number;
   teamA: string | null;
   teamB: string | null;
+  teamAPosition: '1st' | '2nd' | '3rd' | null;
+  teamBPosition: '1st' | '2nd' | '3rd' | null;
   winner: string | null;
 }
 
@@ -32,11 +34,11 @@ interface BracketTree {
 }
 
 const ROUND_LABELS = [
-  { key: 'roundOf32', label: 'Round of 32', short: 'R32', matches: 16 },
-  { key: 'roundOf16', label: 'Round of 16', short: 'R16', matches: 8 },
-  { key: 'quarterFinals', label: 'Quarter-Finals', short: 'QF', matches: 4 },
-  { key: 'semiFinals', label: 'Semi-Finals', short: 'SF', matches: 2 },
-  { key: 'final', label: 'Final', short: 'Final', matches: 1 },
+  { key: 'roundOf32', label: 'Round of 32', short: 'R32', matches: 16, showPos: true },
+  { key: 'roundOf16', label: 'Round of 16', short: 'R16', matches: 8, showPos: false },
+  { key: 'quarterFinals', label: 'Quarter-Finals', short: 'QF', matches: 4, showPos: false },
+  { key: 'semiFinals', label: 'Semi-Finals', short: 'SF', matches: 2, showPos: false },
+  { key: 'final', label: 'Final', short: 'Final', matches: 1, showPos: false },
 ] as const;
 
 type RoundKey = typeof ROUND_LABELS[number]['key'];
@@ -91,6 +93,7 @@ export default function BracketView() {
     if (isLocked || !bracket) return;
     const next = JSON.parse(JSON.stringify(bracket)) as BracketTree;
     const match = next[roundKey][matchIdx];
+    if (!match) return;
     const code = team === 'A' ? match.teamA : match.teamB;
     if (!code) return;
 
@@ -100,42 +103,31 @@ export default function BracketView() {
       match.winner = code;
     }
 
-    // Auto-advance winners through the bracket
     advanceToNext(next);
     setBracket(next);
   }
 
   function advanceToNext(b: BracketTree) {
-    // R32 winners → R16
-    b.roundOf16.forEach((m, i) => {
-      const feedA = b.roundOf32[i * 2];
-      const feedB = b.roundOf32[i * 2 + 1];
-      m.teamA = feedA?.winner || null;
-      m.teamB = feedB?.winner || null;
-      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-    });
-
-    // R16 winners → QF
-    b.quarterFinals.forEach((m, i) => {
-      const feedA = b.roundOf16[i * 2];
-      const feedB = b.roundOf16[i * 2 + 1];
-      m.teamA = feedA?.winner || null;
-      m.teamB = feedB?.winner || null;
-      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-    });
-
-    // QF winners → SF
+    const feeds: [keyof BracketTree, keyof BracketTree][] = [
+      ['roundOf32', 'roundOf16'],
+      ['roundOf16', 'quarterFinals'],
+      ['quarterFinals', 'semiFinals'],
+    ];
+    for (const [fromKey, toKey] of feeds) {
+      const from = b[fromKey] as BracketMatch[];
+      const to = b[toKey] as BracketMatch[];
+      to.forEach((m, i) => {
+        const a = from[i * 2];
+        const bMatch = from[i * 2 + 1];
+        m.teamA = a?.winner ?? null;
+        m.teamB = bMatch?.winner ?? null;
+        if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+      });
+    }
     b.semiFinals.forEach((m, i) => {
-      const feedA = b.quarterFinals[i * 2];
-      const feedB = b.quarterFinals[i * 2 + 1];
-      m.teamA = feedA?.winner || null;
-      m.teamB = feedB?.winner || null;
-      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+      if (i === 0) b.final.teamA = m.winner;
+      else b.final.teamB = m.winner;
     });
-
-    // SF winners → Final
-    b.final.teamA = b.semiFinals[0]?.winner || null;
-    b.final.teamB = b.semiFinals[1]?.winner || null;
     if (b.final.winner && b.final.winner !== b.final.teamA && b.final.winner !== b.final.teamB) {
       b.final.winner = null;
     }
@@ -169,8 +161,9 @@ export default function BracketView() {
   }
 
   const currentRound = ROUND_LABELS[currentRoundIdx];
-  const roundData = bracket ? bracket[currentRound.key] : [];
-  const matches = currentRound.key === 'final' ? [bracket?.final] : roundData as BracketMatch[];
+  const showPos = currentRound.showPos;
+  const roundData = bracket ? (bracket[currentRound.key] as BracketMatch[]) : [];
+  const matches = currentRound.key === 'final' && bracket ? [bracket.final] : roundData;
 
   function countPicks(): number {
     if (!bracket) return 0;
@@ -217,6 +210,44 @@ export default function BracketView() {
     );
   }
 
+  function renderTeamButton(match: BracketMatch, team: 'A' | 'B', idx: number) {
+    const code = team === 'A' ? match.teamA : match.teamB;
+    const pos = team === 'A' ? match.teamAPosition : match.teamBPosition;
+    if (!code) {
+      return (
+        <div className="bg-zinc-900 border border-zinc-800 p-3 text-center text-xs font-bold text-zinc-600 uppercase tracking-wider">
+          TBD
+        </div>
+      );
+    }
+    const isWinner = match.winner === code;
+
+    return (
+      <button
+        onClick={() => handlePick(currentRound.key as RoundKey, idx, team)}
+        disabled={isLocked}
+        className={`w-full flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+          isWinner
+            ? 'bg-emerald-950/40 border-emerald-600 text-emerald-400'
+            : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white disabled:opacity-50'
+        }`}
+      >
+        <img src={flagUrl(code)} className="w-6 h-4 object-contain shrink-0" alt="" />
+        <span className="flex-1 text-left truncate">{teamNames[code] || code}</span>
+        {showPos && pos && (
+          <span className={`text-[9px] font-black px-1.5 py-0.5 ${
+            pos === '1st' ? 'bg-yellow-500/20 text-yellow-400' :
+            pos === '2nd' ? 'bg-zinc-500/20 text-zinc-400' :
+            'bg-amber-700/20 text-amber-500'
+          }`}>
+            {pos}
+          </span>
+        )}
+        {isWinner && <Check size={14} className="shrink-0" />}
+      </button>
+    );
+  }
+
   return (
     <div className="w-full space-y-6">
       <header className="mb-4">
@@ -232,7 +263,6 @@ export default function BracketView() {
         </div>
       </header>
 
-      {/* Round navigation */}
       <div className="flex items-center gap-2 bg-zinc-950 p-4 border border-zinc-800 overflow-x-auto">
         {ROUND_LABELS.map((round, i) => (
           <button
@@ -252,55 +282,27 @@ export default function BracketView() {
         </div>
       </div>
 
-      {/* Round matches */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {matches.map((match, idx) => {
           if (!match) return null;
-          const actualIdx = currentRound.key === 'final' ? 0 : idx;
 
           return (
-            <div key={actualIdx} className="bg-zinc-950 border border-zinc-800 overflow-hidden">
-              {(currentRound.key !== 'final' || true) && (
-                <div className="bg-zinc-900 px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
-                  <span className="font-black text-[10px] text-zinc-500 uppercase tracking-widest">
-                    Match {actualIdx + 1}
-                  </span>
-                  <Shield size={12} className="text-zinc-500" />
-                </div>
-              )}
+            <div key={currentRound.key === 'final' ? 'final' : idx} className="bg-zinc-950 border border-zinc-800 overflow-hidden">
+              <div className="bg-zinc-900 px-4 py-2 border-b border-zinc-800 flex items-center justify-between">
+                <span className="font-black text-[10px] text-zinc-500 uppercase tracking-widest">
+                  {currentRound.key === 'final' ? 'Final' : `Match ${idx + 1}`}
+                </span>
+                <Shield size={12} className="text-zinc-500" />
+              </div>
 
               <div className="p-4 space-y-2">
-                {([['A', match.teamA], ['B', match.teamB]] as const).map(([side, code]) => {
-                  if (!code) {
-                    return (
-                      <div key={side} className="bg-zinc-900 border border-zinc-800 p-3 text-center text-xs font-bold text-zinc-600 uppercase tracking-wider">
-                        TBD
-                      </div>
-                    );
-                  }
-                  const isWinner = match.winner === code;
-                  return (
-                    <button
-                      key={side}
-                      onClick={() => handlePick(currentRound.key as RoundKey, actualIdx, side)}
-                      disabled={isLocked}
-                      className={`w-full flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                        isWinner
-                          ? 'bg-emerald-950/40 border-emerald-600 text-emerald-400'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white disabled:opacity-50'
-                      }`}
-                    >
-                      <img src={flagUrl(code)} className="w-6 h-4 object-contain" alt="" />
-                      <span className="flex-1 text-left">{teamNames[code] || code}</span>
-                      {isWinner && <Check size={14} />}
-                    </button>
-                  );
-                })}
+                {renderTeamButton(match, 'A', idx)}
+                {renderTeamButton(match, 'B', idx)}
               </div>
 
               <div className="bg-zinc-900 px-4 py-2 border-t border-zinc-800 flex items-center justify-between">
                 <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider">
-                  {currentRound.key !== 'final' ? `→ R${currentRoundIdx + 2}` : 'Champion'}
+                  {currentRound.key === 'final' ? 'Champion' : `→ ${currentRoundIdx < ROUND_LABELS.length - 1 ? ROUND_LABELS[currentRoundIdx + 1].short : 'Done'}`}
                 </span>
                 {match.winner && (
                   <div className="flex items-center gap-1.5 text-emerald-500 text-[9px] font-black uppercase tracking-wider">
@@ -314,7 +316,6 @@ export default function BracketView() {
         })}
       </div>
 
-      {/* Navigation arrows */}
       <div className="flex items-center justify-between bg-zinc-950 p-4 border border-zinc-800">
         <button
           onClick={() => setCurrentRoundIdx(Math.max(0, currentRoundIdx - 1))}
@@ -328,7 +329,7 @@ export default function BracketView() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-zinc-800 hover:bg-zinc-700 text-white font-black py-2 px-6 text-xs uppercase tracking-widest transition-all cursor-pointer disabled:opacity-30"
+            className="bg-white hover:bg-zinc-200 text-black font-black py-2 px-6 text-xs uppercase tracking-widest transition-all cursor-pointer disabled:opacity-30"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
@@ -340,7 +341,7 @@ export default function BracketView() {
             <button
               onClick={handleLock}
               disabled={saving}
-              className="bg-white hover:bg-zinc-200 text-black font-black py-2 px-6 text-xs uppercase tracking-widest transition-all cursor-pointer disabled:opacity-30"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 px-6 text-xs uppercase tracking-widest transition-all cursor-pointer disabled:opacity-30"
             >
               <Lock size={12} className="inline mr-1.5" /> Lock
             </button>

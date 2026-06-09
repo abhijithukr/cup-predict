@@ -201,7 +201,7 @@ export default function PredictionsView() {
           <button 
             onClick={handleSubmitAll}
             disabled={submitting}
-            className="w-full md:w-auto min-w-[280px] bg-[#1d1409] hover:bg-[#4b3d2e] text-white font-extrabold py-3.5 px-8 transition-all text-base cursor-pointer disabled:opacity-50"
+            className="w-full md:w-auto min-w-[280px] bg-white hover:bg-zinc-200 text-black font-extrabold py-3.5 px-8 transition-all text-base cursor-pointer disabled:opacity-50"
           >
             {submitting ? 'Submitting...' : 'Submit All Predictions'}
           </button>
