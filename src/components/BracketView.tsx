@@ -34,11 +34,11 @@ interface BracketTree {
 }
 
 const ROUND_LABELS = [
-  { key: 'roundOf32', label: 'Round of 32', short: 'R32', matches: 16, showPos: true },
-  { key: 'roundOf16', label: 'Round of 16', short: 'R16', matches: 8, showPos: false },
-  { key: 'quarterFinals', label: 'Quarter-Finals', short: 'QF', matches: 4, showPos: false },
-  { key: 'semiFinals', label: 'Semi-Finals', short: 'SF', matches: 2, showPos: false },
-  { key: 'final', label: 'Final', short: 'Final', matches: 1, showPos: false },
+  { key: 'roundOf32', label: 'Round of 32', short: 'R32', matches: 16 },
+  { key: 'roundOf16', label: 'Round of 16', short: 'R16', matches: 8 },
+  { key: 'quarterFinals', label: 'Quarter-Finals', short: 'QF', matches: 4 },
+  { key: 'semiFinals', label: 'Semi-Finals', short: 'SF', matches: 2 },
+  { key: 'final', label: 'Final', short: 'Final', matches: 1 },
 ] as const;
 
 type RoundKey = typeof ROUND_LABELS[number]['key'];
@@ -161,7 +161,6 @@ export default function BracketView() {
   }
 
   const currentRound = ROUND_LABELS[currentRoundIdx];
-  const showPos = currentRound.showPos;
   const roundData = bracket ? (bracket[currentRound.key] as BracketMatch[]) : [];
   const matches = currentRound.key === 'final' && bracket ? [bracket.final] : roundData;
 
@@ -212,7 +211,6 @@ export default function BracketView() {
 
   function renderTeamButton(match: BracketMatch, team: 'A' | 'B', idx: number) {
     const code = team === 'A' ? match.teamA : match.teamB;
-    const pos = team === 'A' ? match.teamAPosition : match.teamBPosition;
     if (!code) {
       return (
         <div className="bg-zinc-900 border border-zinc-800 p-3 text-center text-xs font-bold text-zinc-600 uppercase tracking-wider">
@@ -234,15 +232,7 @@ export default function BracketView() {
       >
         <img src={flagUrl(code)} className="w-6 h-4 object-contain shrink-0" alt="" />
         <span className="flex-1 text-left truncate">{teamNames[code] || code}</span>
-        {showPos && pos && (
-          <span className={`text-[9px] font-black px-1.5 py-0.5 ${
-            pos === '1st' ? 'bg-yellow-500/20 text-yellow-400' :
-            pos === '2nd' ? 'bg-zinc-500/20 text-zinc-400' :
-            'bg-amber-700/20 text-amber-500'
-          }`}>
-            {pos}
-          </span>
-        )}
+
         {isWinner && <Check size={14} className="shrink-0" />}
       </button>
     );
