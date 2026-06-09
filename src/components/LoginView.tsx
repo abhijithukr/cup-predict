@@ -143,7 +143,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                   className="w-full pl-12 pr-4 py-3.5 bg-zinc-900 border border-zinc-500/10 rounded-none font-medium text-sm outline-none focus:border-zinc-400 transition-all placeholder:text-zinc-500 text-zinc-300 tracking-wide"
                   id="username" value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Student ID or username" type="text"
+                  placeholder="username" type="text"
                 />
               </div>
             </div>
