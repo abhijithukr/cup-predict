@@ -66,9 +66,9 @@ router.get('/:id/stats', async (req: Request, res: Response) => {
       res.json({ total: 0, teamAWinPct: null, drawPct: null, teamBWinPct: null });
       return;
     }
-    const teamAWin = predictions.filter((p) => p.scoreA > p.scoreB).length;
-    const draw = predictions.filter((p) => p.scoreA === p.scoreB).length;
-    const teamBWin = predictions.filter((p) => p.scoreA < p.scoreB).length;
+    const teamAWin = predictions.filter((p: { scoreA: number; scoreB: number }) => p.scoreA > p.scoreB).length;
+    const draw = predictions.filter((p: { scoreA: number; scoreB: number }) => p.scoreA === p.scoreB).length;
+    const teamBWin = predictions.filter((p: { scoreA: number; scoreB: number }) => p.scoreA < p.scoreB).length;
     res.json({
       total,
       teamAWinPct: Math.round((teamAWin / total) * 100),

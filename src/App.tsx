@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Tv, Calendar, Trophy, User, LogOut, Award, Bell, Menu, X, 
-  ChevronRight,   ClipboardList, Shield, Flame, User
+  ChevronRight, ClipboardList, Shield, Flame
 } from 'lucide-react';
 import { ViewType, UserProfile } from './types';
 
 import LoginView from './components/LoginView';
 import DashboardView from './components/DashboardView';
 import PredictionsView from './components/PredictionsView';
-import KnockoutsView from './components/KnockoutsView';
+import GroupStageView from './components/GroupStageView';
+import BracketView from './components/BracketView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
 import { getAvatarUrl } from './avatar';
@@ -79,7 +80,8 @@ export default function App() {
 
   const NAV_ITEMS = [
     { id: 'DASHBOARD', label: 'Welcome Hub', icon: Tv },
-    { id: 'PREDICTIONS', label: 'Group Predictions', icon: Calendar },
+    { id: 'PREDICTIONS', label: 'Match Predictions', icon: Calendar },
+    { id: 'GROUP_STAGE', label: 'Group Stage', icon: Shield },
     { id: 'KNOCKOUTS', label: 'Knockout Bracket', icon: Trophy },
     { id: 'LEADERBOARD', label: 'Leaderboard', icon: Award },
     { id: 'PROFILE', label: 'My profile', icon: User },
@@ -242,8 +244,12 @@ export default function App() {
             <PredictionsView />
           )}
 
+          {activeView === 'GROUP_STAGE' && (
+            <GroupStageView />
+          )}
+
           {activeView === 'KNOCKOUTS' && (
-            <KnockoutsView username={user.username} />
+            <BracketView />
           )}
 
           {activeView === 'LEADERBOARD' && (

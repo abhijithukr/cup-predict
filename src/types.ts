@@ -1,4 +1,4 @@
-export type ViewType = 'LOGIN' | 'DASHBOARD' | 'PREDICTIONS' | 'KNOCKOUTS' | 'LEADERBOARD' | 'PROFILE';
+export type ViewType = 'LOGIN' | 'DASHBOARD' | 'PREDICTIONS' | 'GROUP_STAGE' | 'KNOCKOUTS' | 'LEADERBOARD' | 'PROFILE';
 
 export interface UserProfile {
   username: string;

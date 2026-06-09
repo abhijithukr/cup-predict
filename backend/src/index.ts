@@ -9,6 +9,8 @@ import predictionRoutes from './routes/predictions';
 import bracketRoutes from './routes/brackets';
 import leaderboardRoutes from './routes/leaderboard';
 import syncRoutes from './routes/sync';
+import groupPredictionRoutes from './routes/groupPredictions';
+import knockoutPredictionRoutes from './routes/knockoutPredictions';
 import { syncAllFixtures, syncLiveScores, processFinishedMatches, clearOldData } from './services/sync';
 
 const app = express();
@@ -22,6 +24,8 @@ app.use('/api/predictions', predictionRoutes);
 app.use('/api/brackets', bracketRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/group-predictions', groupPredictionRoutes);
+app.use('/api/knockout-predictions', knockoutPredictionRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

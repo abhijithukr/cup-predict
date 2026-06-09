@@ -107,4 +107,53 @@ export async function getLeaderboard() {
   return handleResponse(res);
 }
 
+export async function getGroupPredictions() {
+  const res = await fetch(`${API_BASE}/group-predictions`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function saveGroupPredictions(groups: { groupName: string; firstCode: string; secondCode: string; thirdCode: string | null; thirdQualifies: boolean }[]) {
+  const res = await fetch(`${API_BASE}/group-predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ groups }),
+  });
+  return handleResponse(res);
+}
+
+export async function getKnockoutPredictions() {
+  const res = await fetch(`${API_BASE}/knockout-predictions`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function saveKnockoutPredictions(bracket: any) {
+  const res = await fetch(`${API_BASE}/knockout-predictions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ bracket }),
+  });
+  return handleResponse(res);
+}
+
+export async function lockKnockoutPredictions() {
+  const res = await fetch(`${API_BASE}/knockout-predictions/lock`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+export async function advanceBracket(bracket: any) {
+  const res = await fetch(`${API_BASE}/knockout-predictions/advance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ bracket }),
+  });
+  return handleResponse(res);
+}
+
 

@@ -21,8 +21,10 @@ model User {
   avatarUrl    String?
   createdAt    DateTime     @default(now())
 
-  predictions Prediction[]
-  bracket     Bracket?
+  predictions      Prediction[]
+  bracket          Bracket?
+  groupPredictions GroupPrediction[]
+  knockoutPrediction KnockoutPrediction?
 }
 
 model Team {
@@ -66,6 +68,29 @@ model Prediction {
   createdAt    DateTime @default(now())
 
   @@unique([userId, fixtureId])
+}
+
+model GroupPrediction {
+  id             String   @id @default(uuid())
+  userId         String
+  groupName      String
+  firstCode      String
+  secondCode     String
+  thirdCode      String?
+  thirdQualifies Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, groupName])
+}
+
+model KnockoutPrediction {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  bracket   Json
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Bracket {
