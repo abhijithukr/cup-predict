@@ -13,6 +13,7 @@ import BracketView from './components/BracketView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
 import { getAvatarUrl } from './avatar';
+import { getAlerts, Alert } from './api';
 
 function mapUser(raw: any): UserProfile {
   return {
@@ -36,6 +37,19 @@ export default function App() {
   const [activeView, setActiveView] = useState<ViewType>('DASHBOARD');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const fetchAlerts = async () => {
+      try {
+        setAlerts(await getAlerts());
+      } catch { /* ignore */ }
+    };
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const token = localStorage.getItem('jwt_token');
@@ -210,21 +224,22 @@ export default function App() {
               </button>
               <div className="absolute right-0 top-11 bg-zinc-950 border border-zinc-500/10 w-80 shadow-2xl p-4 invisible group-hover:visible transition-all duration-150 z-50">
                 <h4 className="font-black text-xs text-zinc-400 uppercase tracking-widest mb-3 pb-1.5 border-b border-zinc-500/10">CAMPUS ALERTS</h4>
-                <div className="space-y-3 font-medium text-xs text-zinc-500">
-                  <div className="flex gap-2.5 items-start">
-                    <span className="w-2 h-2 bg-red-600 mt-1 shrink-0" />
-                    <div>
-                      <p className="font-bold text-zinc-300">Germany vs Denmark kicks off soon</p>
-                      <p className="text-[10px] text-zinc-500">Lock predictors before cutoff time!</p>
+                <div className="space-y-3 font-medium text-xs text-zinc-500 max-h-60 overflow-y-auto">
+                  {alerts.length === 0 && (
+                    <p className="text-zinc-600 text-center py-4">No alerts right now.</p>
+                  )}
+                  {alerts.map(a => (
+                    <div key={a.id} className="flex gap-2.5 items-start">
+                      <span className={`w-2 h-2 mt-1 shrink-0 rounded-full ${
+                        a.severity === 'red' ? 'bg-red-600' :
+                        a.severity === 'amber' ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`} />
+                      <div>
+                        <p className="font-bold text-zinc-300">{a.title}</p>
+                        <p className="text-[10px] text-zinc-500">{a.description}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2.5 items-start">
-                    <span className="w-2 h-2 bg-red-600 mt-1 shrink-0" />
-                    <div>
-                      <p className="font-bold text-zinc-300">Live Campus Tournament Active</p>
-                      <p className="text-[10px] text-zinc-500">Earn +100 bonus prediction points today.</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>

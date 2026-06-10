@@ -156,4 +156,19 @@ export async function advanceBracket(bracket: any) {
   return handleResponse(res);
 }
 
+export interface Alert {
+  id: string;
+  severity: 'red' | 'amber' | 'green';
+  title: string;
+  description: string;
+}
+
+export async function getAlerts(): Promise<Alert[]> {
+  const res = await fetch(`${API_BASE}/alerts`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await handleResponse(res);
+  return data.alerts || [];
+}
+
 
