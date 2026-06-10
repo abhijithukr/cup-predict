@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/auth';
+import { computeAllGroupStandings } from '../services/groupStandings';
 
 const router = Router();
 
@@ -92,6 +93,8 @@ router.post('/result', authMiddleware, async (req: Request, res: Response) => {
     });
 
     for (const pred of fixture.predictions) {
+      if (pred.status !== 'OPEN') continue;
+
       const correct = pred.scoreA === scoreA && pred.scoreB === scoreB;
       const pointsEarned = correct ? 15 : 0;
 
@@ -115,6 +118,8 @@ router.post('/result', authMiddleware, async (req: Request, res: Response) => {
         });
       }
     }
+
+    await computeAllGroupStandings();
 
     res.json(fixture);
   } catch (err) {
