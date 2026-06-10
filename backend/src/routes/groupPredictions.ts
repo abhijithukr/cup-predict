@@ -39,8 +39,8 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    if (new Date() > new Date('2026-06-12T23:59:59Z')) {
-      res.status(400).json({ error: 'Group predictions closed after June 12' });
+    if (new Date() > new Date('2026-06-17T23:59:59Z')) {
+      res.status(400).json({ error: 'Group predictions closed after June 17' });
       return;
     }
 
