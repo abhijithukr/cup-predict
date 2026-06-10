@@ -93,7 +93,7 @@ router.post('/result', authMiddleware, async (req: Request, res: Response) => {
 
     for (const pred of fixture.predictions) {
       const correct = pred.scoreA === scoreA && pred.scoreB === scoreB;
-      const pointsEarned = correct ? 10 : 0;
+      const pointsEarned = correct ? 15 : 0;
 
       await prisma.prediction.update({
         where: { id: pred.id },
