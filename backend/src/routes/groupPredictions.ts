@@ -39,6 +39,11 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 
 router.post('/', authMiddleware, async (req: Request, res: Response) => {
   try {
+    if (new Date() > new Date('2026-06-17T00:00:00Z')) {
+      res.status(400).json({ error: 'Group predictions closed after June 17' });
+      return;
+    }
+
     const { groups: predictions } = req.body as { groups: { groupName: string; firstCode: string; secondCode: string; thirdCode: string | null; thirdQualifies: boolean }[] };
 
     if (!Array.isArray(predictions) || predictions.length === 0) {
@@ -63,15 +68,6 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
           thirdCode: p.thirdCode,
           thirdQualifies: p.thirdQualifies,
         },
-      });
-    }
-
-    // Award points on first-time group prediction
-    const count = await prisma.groupPrediction.count({ where: { userId: req.user!.userId } });
-    if (count === predictions.length) {
-      await prisma.user.update({
-        where: { id: req.user!.userId },
-        data: { points: { increment: 50 } },
       });
     }
 

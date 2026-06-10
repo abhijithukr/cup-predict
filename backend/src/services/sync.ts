@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { getRoundEvents, getScheduledEvents, getLiveEvents } from './api-client';
 import { scoreFixture } from './scoring';
+import { computeAllGroupStandings } from './groupStandings';
 
 const ROUNDS = [1, 2, 3];
 
@@ -133,6 +134,11 @@ export async function processFinishedMatches() {
       scored++;
     }
   }
+
+  if (scored > 0) {
+    await computeAllGroupStandings();
+  }
+
   return scored;
 }
 

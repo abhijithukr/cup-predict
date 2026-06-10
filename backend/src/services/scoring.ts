@@ -7,7 +7,7 @@ export async function scoreFixture(predictionId: string, actualScoreA: number, a
   if (!pred || pred.status !== 'OPEN') return;
 
   const correct = pred.scoreA === actualScoreA && pred.scoreB === actualScoreB;
-  const pointsEarned = correct ? 150 : 0;
+  const pointsEarned = correct ? 10 : 0;
 
   await prisma.prediction.update({
     where: { id: predictionId },

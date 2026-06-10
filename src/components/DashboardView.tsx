@@ -182,27 +182,34 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center">
-          <p className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-[0.2em]">Predict Score</p>
-          <div className="flex items-center gap-3 justify-center mb-5">
-            <input type="number" min="0" placeholder="Home" disabled={nextLocked || nextFixture.isClosed}
-              value={nextA} onChange={(e) => setNextA(e.target.value)}
-              className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
-            <span className="text-lg font-bold text-zinc-600">-</span>
-            <input type="number" min="0" placeholder="Away" disabled={nextLocked || nextFixture.isClosed}
-              value={nextB} onChange={(e) => setNextB(e.target.value)}
-              className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
-          </div>
-          {nextLocked || nextFixture.isClosed ? (
-            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-950/40 px-5 py-2.5 border border-emerald-800/50 text-xs font-black tracking-wider uppercase">
-              <Check size={14} />
-              <span>Prediction Submitted</span>
-            </div>
-          ) : (
-            <button onClick={handleNextSubmit} className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all flex items-center gap-2 cursor-pointer">
-              <Check size={14} />
-              LOCK PREDICTION
-            </button>
-          )}
+          {(() => {
+            const isLocked = nextLocked || nextFixture.isClosed || new Date(nextFixture.kickoffTime) <= new Date();
+            return (
+              <>
+                <p className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-[0.2em]">Predict Score</p>
+                <div className="flex items-center gap-3 justify-center mb-5">
+                  <input type="number" min="0" placeholder="Home" disabled={isLocked}
+                    value={nextA} onChange={(e) => setNextA(e.target.value)}
+                    className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
+                  <span className="text-lg font-bold text-zinc-600">-</span>
+                  <input type="number" min="0" placeholder="Away" disabled={isLocked}
+                    value={nextB} onChange={(e) => setNextB(e.target.value)}
+                    className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
+                </div>
+                {isLocked ? (
+                  <div className="flex items-center gap-2 text-emerald-400 bg-emerald-950/40 px-5 py-2.5 border border-emerald-800/50 text-xs font-black tracking-wider uppercase">
+                    <Check size={14} />
+                    <span>Prediction Submitted</span>
+                  </div>
+                ) : (
+                  <button onClick={handleNextSubmit} className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all flex items-center gap-2 cursor-pointer">
+                    <Check size={14} />
+                    LOCK PREDICTION
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
     </section>

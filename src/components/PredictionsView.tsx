@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getFixtures, submitPrediction } from '../api';
 import { Check, Info, Lock, Verified } from 'lucide-react';
 
+function isMatchLocked(f: any): boolean {
+  return f.isClosed || (f.kickoffTime && new Date(f.kickoffTime) <= new Date());
+}
+
 export default function PredictionsView() {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({});
@@ -33,7 +37,7 @@ export default function PredictionsView() {
   };
 
   const handleSubmitAll = async () => {
-    const openFixtures = fixtures.filter(f => !f.isClosed);
+    const openFixtures = fixtures.filter(f => !isMatchLocked(f));
     const incomplete = openFixtures.filter(f => {
       const s = scores[f.id];
       return !s || !s.a.trim() || !s.b.trim();
@@ -76,7 +80,7 @@ export default function PredictionsView() {
   }
 
   const unsavedCount = fixtures.filter(f => {
-    if (f.isClosed) return false;
+    if (isMatchLocked(f)) return false;
     const s = scores[f.id];
     return !s || !s.a.trim() || !s.b.trim();
   }).length;
@@ -105,7 +109,7 @@ export default function PredictionsView() {
             {(groupFixtures as any[]).map((f: any) => {
               const s = scores[f.id] || { a: '', b: '' };
               return (
-                <div key={f.id} className={`bg-zinc-950 border border-white/10 rounded-none overflow-hidden shadow-sm hover:border-white/30 transition-all group relative duration-300 ${f.isClosed ? 'opacity-70' : ''}`}>
+                <div key={f.id} className={`bg-zinc-950 border border-white/10 rounded-none overflow-hidden shadow-sm hover:border-white/30 transition-all group relative duration-300 ${isMatchLocked(f) ? 'opacity-70' : ''}`}>
                   <div className="flex flex-col md:flex-row items-center p-6 md:p-8 gap-6 relative">
                     <div className="absolute inset-0 pitch-pattern opacity-10 pointer-events-none" />
 
@@ -124,7 +128,7 @@ export default function PredictionsView() {
                       <div className="flex flex-col items-center">
                         <input 
                           type="number" min="0"
-                          disabled={f.isClosed}
+                          disabled={isMatchLocked(f)}
                           placeholder="0"
                           value={s.a}
                           onChange={(e) => handleScoreChange(f.id, 'A', e.target.value)}
@@ -145,7 +149,7 @@ export default function PredictionsView() {
                       <div className="flex flex-col items-center">
                         <input 
                           type="number" min="0"
-                          disabled={f.isClosed}
+                          disabled={isMatchLocked(f)}
                           placeholder="0"
                           value={s.b}
                           onChange={(e) => handleScoreChange(f.id, 'B', e.target.value)}
@@ -175,8 +179,10 @@ export default function PredictionsView() {
                       {f.isClosed ? (
                         <>
                           <Lock size={14} className="text-zinc-650" />
-                          <span className="text-zinc-500">Prediction Closed</span>
+                          <span className="text-zinc-500">Closed</span>
                         </>
+                      ) : isMatchLocked(f) ? (
+                        <span className="text-zinc-500">Match started</span>
                       ) : (
                         <>
                           <Verified size={15} className="text-[#a3e635]" />

@@ -22,8 +22,8 @@ router.get('/next', authMiddleware, async (req: Request, res: Response) => {
     const now = new Date();
     const fixture = await prisma.fixture.findFirst({
       where: {
-        status: { not: 'finished' },
-        kickoffTime: { gte: now },
+        isClosed: false,
+        kickoffTime: { gt: now },
       },
       include: { teamA: true, teamB: true, predictions: { where: { userId: req.user!.userId } } },
       orderBy: { kickoffTime: 'asc' },
@@ -93,7 +93,7 @@ router.post('/result', authMiddleware, async (req: Request, res: Response) => {
 
     for (const pred of fixture.predictions) {
       const correct = pred.scoreA === scoreA && pred.scoreB === scoreB;
-      const pointsEarned = correct ? 150 : 0;
+      const pointsEarned = correct ? 10 : 0;
 
       await prisma.prediction.update({
         where: { id: pred.id },

@@ -69,6 +69,13 @@ model Prediction {
   @@unique([userId, fixtureId])
 }
 
+model GroupResult {
+  groupName  String @id
+  firstCode  String
+  secondCode String
+  thirdCode  String
+}
+
 model GroupPrediction {
   id             String   @id @default(uuid())
   userId         String
@@ -77,6 +84,9 @@ model GroupPrediction {
   secondCode     String
   thirdCode      String?
   thirdQualifies Boolean  @default(false)
+  scoredFirst    Boolean  @default(false)
+  scoredSecond   Boolean  @default(false)
+  scoredThird    Boolean  @default(false)
   createdAt      DateTime @default(now())
   user           User     @relation(fields: [userId], references: [id])
 

@@ -26,13 +26,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       create: { userId, fixtureId, scoreA, scoreB },
     });
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { points: { increment: 25 } },
-    });
-
     const updatedUser = await prisma.user.findUnique({ where: { id: userId } });
-    res.status(201).json({ prediction, pointsAwarded: 25, totalPoints: updatedUser?.points });
+    res.status(201).json({ prediction, pointsAwarded: 0, totalPoints: updatedUser?.points });
   } catch (err) {
     console.error('Submit prediction error:', err);
     res.status(500).json({ error: 'Failed to submit prediction' });

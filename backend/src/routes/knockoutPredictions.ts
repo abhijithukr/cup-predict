@@ -92,12 +92,6 @@ router.post('/lock', authMiddleware, async (req: Request, res: Response) => {
       data: { locked: true },
     });
 
-    // Award points for locking
-    await prisma.user.update({
-      where: { id: req.user!.userId },
-      data: { points: { increment: 100 } },
-    });
-
     res.json(updated);
   } catch (err) {
     console.error('Lock knockout predictions error:', err);

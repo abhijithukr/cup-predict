@@ -95,7 +95,7 @@ export default function App() {
     { id: 'DASHBOARD', label: 'Welcome Hub', icon: Tv },
     { id: 'PREDICTIONS', label: 'Match Predictions', icon: Calendar },
     { id: 'GROUP_STAGE', label: 'Group Stage', icon: Shield },
-    { id: 'KNOCKOUTS', label: 'Knockout Bracket', icon: Trophy },
+
     { id: 'LEADERBOARD', label: 'Leaderboard', icon: Award },
     { id: 'PROFILE', label: 'My profile', icon: User },
   ];
