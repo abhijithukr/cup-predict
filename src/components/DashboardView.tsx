@@ -49,7 +49,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
 
     const interval = setInterval(() => {
       loadNextFixture();
-      if (activeTab === 'MATCH_CENTER') loadLiveData();
+      loadLeaderboard();
     }, 15000);
     return () => clearInterval(interval);
   }, [user]);
