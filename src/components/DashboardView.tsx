@@ -400,13 +400,11 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                 </section>
                 <section className="space-y-4">
                   <h2 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
-                    <Clock size={18} /> Today's Fixtures
+                    <Clock size={18} /> Upcoming Fixtures
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {allFixtures.filter((f: any) => {
-                      const d = new Date(f.kickoffTime);
-                      const today = new Date();
-                      return d.toDateString() === today.toDateString();
+                      return new Date(f.kickoffTime) > new Date() && !f.isClosed;
                     }).map((f: any) => {
                       const s = fixtureScores[f.id] || { a: '', b: '' };
                       const isPast = new Date(f.kickoffTime) <= new Date() || f.isClosed;
