@@ -51,7 +51,7 @@ export default function GroupStageView() {
             second: g.prediction?.secondCode || null,
             third: g.prediction?.thirdCode || null,
           };
-          thirds[g.groupName] = g.prediction?.thirdQualifies || false;
+          thirds[g.groupName] = false;
         }
         setPicks(init);
         setThirdSelections(thirds);
