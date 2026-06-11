@@ -24,6 +24,7 @@ model User {
   bracket          Bracket?
   groupPredictions GroupPrediction[]
   knockoutPrediction KnockoutPrediction?
+  pointEvents      PointEvent[]
 }
 
 model Team {
@@ -116,4 +117,14 @@ model Bracket {
   champion  String
   locked    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model PointEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  points    Int
+  earned    Int
+  reason    String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }

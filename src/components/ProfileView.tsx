@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, MatchPrediction } from '../types';
 import { FLAG_MAP } from '../initialData';
-import { getPredictionHistory } from '../api';
+import { getPredictionHistory, getPointHistory, PointEvent } from '../api';
 import { Award, Star, History, Calendar, TrendingUp, Trophy } from 'lucide-react';
 import { getAvatarUrl } from '../avatar';
 
@@ -34,7 +34,8 @@ function mapPrediction(p: any): MatchPrediction {
 export default function ProfileView({ user }: ProfileViewProps) {
   const [pastPredictions, setPastPredictions] = useState<MatchPrediction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; rank: number } | null>(null);
+  const [pointEvents, setPointEvents] = useState<PointEvent[]>([]);
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; pts: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -50,13 +51,43 @@ export default function ProfileView({ user }: ProfileViewProps) {
     })();
   }, []);
 
-  const rankHistoryData = [
-    { date: 'Oct 1', rank: Math.max(user.rank + 40, 1), x: 50, y: 151 },
-    { date: 'Oct 8', rank: Math.max(user.rank + 25, 1), x: 150, y: 120 },
-    { date: 'Oct 15', rank: Math.max(user.rank + 10, 1), x: 250, y: 90 },
-    { date: 'Oct 22', rank: Math.max(user.rank + 3, 1), x: 350, y: 70 },
-    { date: 'Today', rank: user.rank, x: 450, y: 60 + Math.max(0, (100 - user.rank) * 0.5) },
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const events = await getPointHistory();
+        setPointEvents(events);
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // Build daily cumulative point history
+  const pointHistoryData = (() => {
+    if (pointEvents.length === 0) return [];
+    const daily: { date: string; pts: number }[] = [];
+    const dayMap = new Map<string, number>();
+    for (const e of pointEvents) {
+      const day = new Date(e.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      dayMap.set(day, (dayMap.get(day) || 0) + e.earned);
+    }
+    let cumulative = 0;
+    for (const [date, earned] of dayMap) {
+      cumulative += earned;
+      daily.push({ date, pts: cumulative });
+    }
+    return daily;
+  })();
+
+  const chartPoints = pointHistoryData.length > 0 ? pointHistoryData : [{ date: 'Start', pts: 0 }, { date: 'Today', pts: user.points }];
+  const maxPts = Math.max(...chartPoints.map(d => d.pts), 1);
+  const minPts = Math.min(...chartPoints.map(d => d.pts), 0);
+  const range = maxPts - minPts || 1;
+  const chartW = 450;
+  const chartH = 190;
+  const padY = 30;
+  const svgH = chartH + padY + 20;
+  const stepX = chartPoints.length > 1 ? (chartW - 50) / (chartPoints.length - 1) : 0;
+
+  const ptsToY = (pts: number) => chartH - ((pts - minPts) / range) * (chartH - padY * 2) + padY;
 
   return (
     <div className="w-full space-y-8">
@@ -116,70 +147,89 @@ export default function ProfileView({ user }: ProfileViewProps) {
       <section className="bg-white border border-[#bccbb9]/30 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="font-extrabold text-lg text-[#0b1c30]">Rank Progress</h3>
-            <p className="text-gray-500 text-xs">Climbing trajectory over recent weeks</p>
+            <h3 className="font-extrabold text-lg text-[#0b1c30]">Point Progress</h3>
+            <p className="text-gray-500 text-xs">Points earned over time</p>
           </div>
           <span className="bg-[#eff4ff] text-[#0051d5] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
             <TrendingUp size={14} />
-            Current: #{user.rank}
+            {user.points} pts
           </span>
         </div>
 
         <div className="relative w-full overflow-x-auto pt-4 pb-2">
-          <svg className="min-w-[500px] w-full h-[220px]" viewBox="0 0 500 220">
-            <line x1="50" y1="30" x2="450" y2="30" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
-            <line x1="50" y1="70" x2="450" y2="70" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
-            <line x1="50" y1="110" x2="450" y2="110" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
-            <line x1="50" y1="150" x2="450" y2="150" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
-            <line x1="50" y1="190" x2="450" y2="190" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
+          <svg className="min-w-[500px] w-full h-[220px]" viewBox={`0 0 ${chartW + 50} ${svgH}`}>
+            {(() => {
+              const yTicks = 5;
+              const tickStep = range / yTicks;
+              const lines = [];
+              for (let i = 0; i <= yTicks; i++) {
+                const pts = Math.round(minPts + tickStep * i);
+                const y = ptsToY(pts);
+                lines.push(
+                  <React.Fragment key={i}>
+                    <line x1="50" y1={y} x2={chartW} y2={y} stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
+                    <text x="45" y={y + 3} className="text-[9px] font-mono font-bold fill-gray-400 text-right" textAnchor="end">{pts}</text>
+                  </React.Fragment>
+                );
+              }
+              return lines;
+            })()}
 
-            <text x="25" y="34" className="text-[9px] font-mono font-bold fill-gray-400 text-right">#10</text>
-            <text x="25" y="74" className="text-[9px] font-mono font-bold fill-gray-400 text-right">#40</text>
-            <text x="25" y="114" className="text-[9px] font-mono font-bold fill-gray-400 text-right">#60</text>
-            <text x="25" y="154" className="text-[9px] font-mono font-bold fill-gray-400 text-right">#80</text>
-            <text x="25" y="194" className="text-[9px] font-mono font-bold fill-gray-400 text-right">#100</text>
-
-            <defs>
-              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path 
-              d={`M ${rankHistoryData.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')} L 450 200 L 50 200 Z`} 
-              fill="url(#chartGrad)" 
-            />
-            <path 
-              d={rankHistoryData.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')} 
-              fill="none" stroke="#006e2f" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" 
-            />
-
-            {rankHistoryData.map((pt, idx) => (
-              <circle
-                key={idx}
-                cx={pt.x} cy={pt.y}
-                r={hoveredPoint?.label === pt.date ? "7" : "5"}
-                fill={hoveredPoint?.label === pt.date ? "#0051d5" : "#006e2f"}
-                stroke="#ffffff" strokeWidth="2"
-                className="cursor-pointer transition-all duration-150"
-                onMouseEnter={() => setHoveredPoint({ x: pt.x, y: pt.y, label: pt.date, rank: pt.rank })}
-                onMouseLeave={() => setHoveredPoint(null)}
-              />
-            ))}
-            {rankHistoryData.map((pt, idx) => (
-              <text key={idx} x={pt.x} y="212" className="text-[10px] font-bold font-sans fill-gray-500 text-center" textAnchor="middle">
-                {pt.date}
-              </text>
-            ))}
+            {chartPoints.length > 1 && (
+              <>
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d={chartPoints.map((p, i) => {
+                    const x = 50 + stepX * i;
+                    const y = ptsToY(p.pts);
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ') + ` L ${50 + stepX * (chartPoints.length - 1)} ${chartH} L 50 ${chartH} Z`}
+                  fill="url(#chartGrad)"
+                />
+                <path
+                  d={chartPoints.map((p, i) => {
+                    const x = 50 + stepX * i;
+                    const y = ptsToY(p.pts);
+                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ')}
+                  fill="none" stroke="#006e2f" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+                />
+                {chartPoints.map((pt, idx) => {
+                  const x = 50 + stepX * idx;
+                  const y = ptsToY(pt.pts);
+                  return (
+                    <React.Fragment key={idx}>
+                      <circle
+                        cx={x} cy={y}
+                        r={hoveredPoint?.label === pt.date ? "7" : "5"}
+                        fill={hoveredPoint?.label === pt.date ? "#0051d5" : "#006e2f"}
+                        stroke="#ffffff" strokeWidth="2"
+                        className="cursor-pointer transition-all duration-150"
+                        onMouseEnter={() => setHoveredPoint({ x, y, label: pt.date, pts: pt.pts })}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      />
+                      <text x={x} y={svgH - 4} className="text-[10px] font-bold font-sans fill-gray-500 text-center" textAnchor="middle">
+                        {pt.date}
+                      </text>
+                    </React.Fragment>
+                  );
+                })}
+              </>
+            )}
           </svg>
 
           {hoveredPoint && (
-            <div 
+            <div
               className="absolute bg-slate-900 text-white rounded px-2.5 py-1 text-xs shadow-md font-bold pointer-events-none z-20 flex flex-col items-center leading-none"
               style={{ left: `${hoveredPoint.x}px`, top: `${hoveredPoint.y - 12}px` }}
             >
               <span className="text-[9px] text-slate-300 font-normal mb-1">{hoveredPoint.label}</span>
-              <span>Rank #{hoveredPoint.rank}</span>
+              <span>{hoveredPoint.pts} pts</span>
             </div>
           )}
         </div>

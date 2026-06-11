@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Award, Clock, History, PlaySquare, Check, Tv, Trophy, ChevronUp, MessageSquare, User } from 'lucide-react';
+import { TrendingUp, Award, Clock, History, PlaySquare, Check, Tv, Trophy, ChevronUp, MessageSquare, User, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../types';
 import { getNextFixture, getFixtures, submitPrediction, getFixtureStats, getLeaderboard } from '../api';
 import { getAvatarUrl } from '../avatar';
@@ -34,7 +34,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   const [nextSubmitted, setNextSubmitted] = useState(false);
 
   const [allFixtures, setAllFixtures] = useState<any[]>([]);
-  const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string; locked: boolean }>>({});
+  const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string }>>({});
 
   const [liveFixture, setLiveFixture] = useState<any>(null);
   const [fixtureStats, setFixtureStats] = useState<any>(null);
@@ -89,8 +89,11 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
       const data = await getFixtures();
       const list = data.value || data || [];
       setAllFixtures(list);
-      const init: Record<string, { a: string; b: string; locked: boolean }> = {};
-      list.forEach((f: any) => { init[f.id] = { a: '', b: '', locked: false }; });
+      const init: Record<string, { a: string; b: string }> = {};
+      list.forEach((f: any) => {
+        const pred = f.predictions?.length > 0 ? f.predictions[0] : null;
+        init[f.id] = { a: pred ? String(pred.scoreA) : '', b: pred ? String(pred.scoreB) : '' };
+      });
       setFixtureScores(init);
     } catch { setAllFixtures([]); }
   }
@@ -129,7 +132,6 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
     if (!s?.a.trim() || !s?.b.trim()) return;
     try {
       await submitPrediction(id, parseInt(s.a), parseInt(s.b));
-      setFixtureScores(prev => ({ ...prev, [id]: { ...prev[id], locked: true } }));
       setNextSubmitted(true);
       loadLeaderboard();
     } catch { alert('Failed'); }
@@ -149,11 +151,11 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
             </span>
           )}
         </div>
-        <button onClick={() => onNavigate('PREDICTIONS')} className="text-zinc-400 hover:text-white font-black uppercase tracking-widest text-[10px] border-b border-zinc-700 hover:border-white transition-all py-1">
+        <button onClick={() => onNavigate('GROUP_STAGE')} className="text-zinc-400 hover:text-white font-black uppercase tracking-widest text-[10px] border-b border-zinc-700 hover:border-white transition-all py-1">
           Full Schedule
         </button>
       </div>
-      <div className="bg-zinc-950 p-6 md:p-8 border border-zinc-800">
+      <div className="bg-zinc-950 p-6 md:p-8 border border-zinc-800 cursor-pointer hover:border-zinc-600 transition-all" onClick={() => onNavigate('GROUP_STAGE')}>
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center gap-4 w-full md:w-1/3">
             <div className="w-24 h-24 md:w-28 md:h-28 bg-zinc-900 flex items-center justify-center p-3 border border-zinc-800">
@@ -306,7 +308,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                 <p className="text-zinc-400 text-xs uppercase tracking-wider mb-6 leading-relaxed">
                   Predict group stage matches and climb the leaderboard. Matches start June 11!
                 </p>
-                <button onClick={() => onNavigate('PREDICTIONS')} className="bg-white text-black font-black text-xs uppercase tracking-[0.2em] py-3.5 px-6 hover:bg-zinc-200 transition-all cursor-pointer">
+                <button onClick={() => onNavigate('GROUP_STAGE')} className="bg-white text-black font-black text-xs uppercase tracking-[0.2em] py-3.5 px-6 hover:bg-zinc-200 transition-all cursor-pointer">
                   Start Predicting
                 </button>
               </div>
@@ -319,8 +321,9 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
               <h3 className="text-lg font-black text-white uppercase tracking-tighter">All Fixtures</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFixtures.map((f: any) => {
-                  const s = fixtureScores[f.id] || { a: '', b: '', locked: false };
+                  const s = fixtureScores[f.id] || { a: '', b: '' };
                   const isPast = new Date(f.kickoffTime) <= new Date() || f.isClosed;
+                  const hasExistingPred = f.predictions?.length > 0;
                   return (
                     <div key={f.id} className="bg-zinc-950 p-5 border border-zinc-800 hover:border-zinc-600 transition-all">
                       <div className="flex items-center justify-between mb-3 border-b border-zinc-800 pb-2">
@@ -351,19 +354,19 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <input type="number" min="0" disabled={s.locked} placeholder="0"
+                          <input type="number" min="0" disabled={isPast} placeholder="0"
                             value={s.a}
                             onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], a: e.target.value } }))}
-                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm" />
+                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
                           <span className="text-zinc-600 font-black">-</span>
-                          <input type="number" min="0" disabled={s.locked} placeholder="0"
+                          <input type="number" min="0" disabled={isPast} placeholder="0"
                             value={s.b}
                             onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], b: e.target.value } }))}
-                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm" />
-                          {s.locked ? (
-                            <span className="bg-zinc-900 text-emerald-400 p-2.5 border border-zinc-800"><Check size={14} /></span>
+                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
+                          {hasExistingPred ? (
+                            <span className="bg-zinc-900 text-emerald-400 p-2.5 border border-zinc-800 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Saved</span>
                           ) : (
-                            <button onClick={() => handleFixturePredict(f.id)} className="bg-white text-black p-2.5 hover:bg-zinc-200 transition-all cursor-pointer"><Check size={14} /></button>
+                            <button onClick={() => handleFixturePredict(f.id)} disabled={!s.a.trim() || !s.b.trim()} className="bg-white text-black px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-zinc-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default">Save</button>
                           )}
                         </div>
                       )}
@@ -447,7 +450,9 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                       const today = new Date();
                       return d.toDateString() === today.toDateString();
                     }).map((f: any) => {
-                      const s = fixtureScores[f.id] || { a: '', b: '', locked: false };
+                      const s = fixtureScores[f.id] || { a: '', b: '' };
+                      const isPast = new Date(f.kickoffTime) <= new Date() || f.isClosed;
+                      const hasExistingPred = f.predictions?.length > 0;
                       return (
                         <div key={f.id} className="bg-zinc-950 p-5 border border-zinc-800 hover:border-zinc-600 transition-all">
                           <div className="flex items-center justify-between mb-3 border-b border-zinc-800 pb-2">
@@ -469,17 +474,17 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <input type="number" min="0" disabled={s.locked || f.isClosed} placeholder="0"
+                            <input type="number" min="0" disabled={isPast} placeholder="0"
                               value={s.a}
                               onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], a: e.target.value } }))}
-                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm" />
+                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
                             <span className="text-zinc-600 font-black">-</span>
-                            <input type="number" min="0" disabled={s.locked || f.isClosed} placeholder="0"
+                            <input type="number" min="0" disabled={isPast} placeholder="0"
                               value={s.b}
                               onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], b: e.target.value } }))}
-                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm" />
-                            {s.locked ? <span className="bg-zinc-900 text-emerald-400 p-2.5 border border-zinc-800"><Check size={14} /></span>
-                              : <button onClick={() => handleFixturePredict(f.id)} className="bg-white text-black p-2.5 hover:bg-zinc-200 transition-all cursor-pointer"><Check size={14} /></button>}
+                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
+                            {hasExistingPred ? <span className="bg-zinc-900 text-emerald-400 p-2.5 border border-zinc-800 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Saved</span>
+                              : <button onClick={() => handleFixturePredict(f.id)} disabled={!s.a.trim() || !s.b.trim()} className="bg-white text-black px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-zinc-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default">Save</button>}
                           </div>
                         </div>
                       );

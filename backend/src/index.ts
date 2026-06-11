@@ -12,6 +12,7 @@ import syncRoutes from './routes/sync';
 import groupPredictionRoutes from './routes/groupPredictions';
 import knockoutPredictionRoutes from './routes/knockoutPredictions';
 import alertRoutes from './routes/alerts';
+import pointHistoryRoutes from './routes/pointHistory';
 import { syncAllFixtures, syncLiveScores, processFinishedMatches, clearOldData } from './services/sync';
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/group-predictions', groupPredictionRoutes);
 app.use('/api/knockout-predictions', knockoutPredictionRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/user/point-history', pointHistoryRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

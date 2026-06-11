@@ -171,4 +171,20 @@ export async function getAlerts(): Promise<Alert[]> {
   return data.alerts || [];
 }
 
+export interface PointEvent {
+  id: string;
+  userId: string;
+  points: number;
+  earned: number;
+  reason: string | null;
+  createdAt: string;
+}
+
+export async function getPointHistory(): Promise<PointEvent[]> {
+  const res = await fetch(`${API_BASE}/user/point-history`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
 

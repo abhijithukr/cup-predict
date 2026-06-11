@@ -100,6 +100,9 @@ async function scoreGroupPredictions(groupName: string, first: string, second: s
           where: { id: pred.userId },
           data: { points: { increment: points } },
         }),
+        prisma.pointEvent.create({
+          data: { userId: pred.userId, points: 0, earned: points, reason: 'group_position' },
+        }),
       ]);
     }
   }

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Tv, Calendar, Trophy, User, LogOut, Award, Bell, Menu, X, 
-  ChevronRight, ClipboardList, Shield, Flame
+  Tv, Trophy, User, LogOut, Award, Bell, Menu, X, 
+  ChevronRight, Shield, Flame
 } from 'lucide-react';
 import { ViewType, UserProfile } from './types';
 
 import LoginView from './components/LoginView';
 import DashboardView from './components/DashboardView';
-import PredictionsView from './components/PredictionsView';
 import GroupStageView from './components/GroupStageView';
 import BracketView from './components/BracketView';
 import LeaderboardView from './components/LeaderboardView';
@@ -93,7 +92,6 @@ export default function App() {
 
   const NAV_ITEMS = [
     { id: 'DASHBOARD', label: 'Welcome Hub', icon: Tv },
-    { id: 'PREDICTIONS', label: 'Match Predictions', icon: Calendar },
     { id: 'GROUP_STAGE', label: 'Group Stage', icon: Shield },
 
     { id: 'LEADERBOARD', label: 'Leaderboard', icon: Award },
@@ -252,10 +250,6 @@ export default function App() {
               user={user} 
               onNavigate={(view) => setActiveView(view as ViewType)}
             />
-          )}
-
-          {activeView === 'PREDICTIONS' && (
-            <PredictionsView />
           )}
 
           {activeView === 'GROUP_STAGE' && (
