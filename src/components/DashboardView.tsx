@@ -28,10 +28,6 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
 
   const [nextFixture, setNextFixture] = useState<any>(null);
   const [countdown, setCountdown] = useState<string>('');
-  const [nextA, setNextA] = useState('');
-  const [nextB, setNextB] = useState('');
-  const [nextLocked, setNextLocked] = useState(false);
-  const [nextSubmitted, setNextSubmitted] = useState(false);
 
   const [allFixtures, setAllFixtures] = useState<any[]>([]);
   const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string }>>({});
@@ -76,11 +72,6 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
     try {
       const data = await getNextFixture();
       setNextFixture(data);
-      if (data.predictions?.length > 0) {
-        setNextA(String(data.predictions[0].scoreA));
-        setNextB(String(data.predictions[0].scoreB));
-        setNextLocked(true);
-      }
     } catch { setNextFixture(null); }
   }
 
@@ -115,16 +106,6 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
         try { const stats = await getFixtureStats(live.id); setFixtureStats(stats); } catch { setFixtureStats(null); }
       }
     } catch { setLiveFixture(null); }
-  }
-
-  async function handleNextSubmit() {
-    if (!nextA.trim() || !nextB.trim()) return;
-    try {
-      await submitPrediction(nextFixture.id, parseInt(nextA), parseInt(nextB));
-      setNextLocked(true);
-      setNextSubmitted(true);
-      loadLeaderboard();
-    } catch { alert('Failed to submit'); }
   }
 
   async function handleFixturePredict(id: string) {
@@ -184,34 +165,15 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center">
-          {(() => {
-            const isLocked = nextLocked || nextFixture.isClosed || new Date(nextFixture.kickoffTime) <= new Date();
-            return (
-              <>
-                <p className="text-xs font-bold text-zinc-400 mb-4 uppercase tracking-[0.2em]">Predict Score</p>
-                <div className="flex items-center gap-3 justify-center mb-5">
-                  <input type="number" min="0" placeholder="Home" disabled={isLocked}
-                    value={nextA} onChange={(e) => setNextA(e.target.value)}
-                    className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
-                  <span className="text-lg font-bold text-zinc-600">-</span>
-                  <input type="number" min="0" placeholder="Away" disabled={isLocked}
-                    value={nextB} onChange={(e) => setNextB(e.target.value)}
-                    className="w-24 text-center text-sm font-black py-2.5 bg-zinc-900 border border-zinc-800 outline-none focus:border-white disabled:opacity-50 text-white" />
-                </div>
-                {isLocked ? (
-                  <div className="flex items-center gap-2 text-emerald-400 bg-emerald-950/40 px-5 py-2.5 border border-emerald-800/50 text-xs font-black tracking-wider uppercase">
-                    <Check size={14} />
-                    <span>Prediction Submitted</span>
-                  </div>
-                ) : (
-                  <button onClick={handleNextSubmit} className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all flex items-center gap-2 cursor-pointer">
-                    <Check size={14} />
-                    LOCK PREDICTION
-                  </button>
-                )}
-              </>
-            );
-          })()}
+          <button
+            onClick={() => {
+              const el = document.getElementById('all-fixtures');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all cursor-pointer"
+          >
+            Predict Score
+          </button>
         </div>
       </div>
     </section>
@@ -317,7 +279,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
           </section>
 
           {allFixtures.length > 0 && (
-            <section className="space-y-4">
+            <section id="all-fixtures" className="space-y-4">
               <h3 className="text-lg font-black text-white uppercase tracking-tighter">All Fixtures</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFixtures.map((f: any) => {
