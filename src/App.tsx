@@ -207,19 +207,9 @@ export default function App() {
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
-              <div className="text-right">
-                <p className="text-zinc-500 text-[9px] font-extrabold tracking-widest uppercase">Balance</p>
-                <p className="text-zinc-300 font-black text-sm">{user.points.toLocaleString()} PTS</p>
-              </div>
-              <div className="h-6 w-[1px] bg-zinc-800/10" />
               <button onClick={() => setActiveView('CONTACT')} className="text-zinc-500 hover:text-zinc-300 font-black text-[10px] uppercase tracking-widest transition-colors cursor-pointer">
                 Contact
               </button>
-              <div className="h-6 w-[1px] bg-zinc-800/10" />
-              <div className="text-right">
-                <p className="text-zinc-500 text-[9px] font-extrabold tracking-widest uppercase">Streak</p>
-                <p className="text-[#4b3d2e] font-black text-sm">{user.winStreak} STREAK</p>
-              </div>
             </div>
 
             <div className="relative group">
