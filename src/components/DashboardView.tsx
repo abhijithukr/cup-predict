@@ -33,6 +33,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   const [allFixtures, setAllFixtures] = useState<any[]>([]);
   const [fixtureScores, setFixtureScores] = useState<Record<string, { a: string; b: string }>>({});
   const [savedFixtures, setSavedFixtures] = useState<Record<string, boolean>>({});
+  const [fixtureErrors, setFixtureErrors] = useState<Record<string, string>>({});
 
   const [liveFixture, setLiveFixture] = useState<any>(null);
   const [fixtureStats, setFixtureStats] = useState<any>(null);
@@ -113,12 +114,25 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   async function handleFixturePredict(id: string) {
     const s = fixtureScores[id];
     if (!s?.a.trim() || !s?.b.trim()) return;
+    const a = parseInt(s.a);
+    const b = parseInt(s.b);
+    if (isNaN(a) || isNaN(b) || a < 0 || b < 0) {
+      setFixtureErrors(prev => ({ ...prev, [id]: 'Enter valid non-negative numbers' }));
+      return;
+    }
+    setFixtureErrors(prev => ({ ...prev, [id]: '' }));
     try {
-      await submitPrediction(id, parseInt(s.a), parseInt(s.b));
+      await submitPrediction(id, a, b);
       setSavedFixtures(prev => ({ ...prev, [id]: true }));
       setTimeout(() => setSavedFixtures(prev => ({ ...prev, [id]: false })), 2000);
       loadLeaderboard();
-    } catch { alert('Failed'); }
+    } catch { alert('Failed to save'); }
+  }
+
+  function handleScoreInput(id: string, side: 'a' | 'b', raw: string) {
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    setFixtureScores(prev => ({ ...prev, [id]: { ...prev[id], [side]: cleaned } }));
+    setFixtureErrors(prev => ({ ...prev, [id]: '' }));
   }
 
   const padZero = (n: number) => n.toString().padStart(2, '0');
@@ -307,20 +321,25 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                           {f.actualScoreA != null ? `${f.actualScoreA} - ${f.actualScoreB}` : 'Match started'}
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <input type="number" min="0" disabled={isPast} placeholder="0"
-                            value={s.a}
-                            onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], a: e.target.value } }))}
-                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
-                          <span className="text-zinc-600 font-black">-</span>
-                          <input type="number" min="0" disabled={isPast} placeholder="0"
-                            value={s.b}
-                            onChange={(e) => setFixtureScores(prev => ({ ...prev, [f.id]: { ...prev[f.id], b: e.target.value } }))}
-                            className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
-                          {justSaved ? (
-                            <span className="bg-emerald-950/40 text-emerald-400 px-3 py-2.5 border border-emerald-800/50 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Saved!</span>
-                          ) : (
-                            <button onClick={() => handleFixturePredict(f.id)} disabled={!s.a.trim() || !s.b.trim()} className="bg-white text-black px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-zinc-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default">Save</button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <input type="text" inputMode="numeric" disabled={isPast} placeholder="0"
+                              value={s.a}
+                              onChange={(e) => handleScoreInput(f.id, 'a', e.target.value)}
+                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
+                            <span className="text-zinc-600 font-black">-</span>
+                            <input type="text" inputMode="numeric" disabled={isPast} placeholder="0"
+                              value={s.b}
+                              onChange={(e) => handleScoreInput(f.id, 'b', e.target.value)}
+                              className="w-full text-center bg-zinc-900 border border-zinc-800 py-2.5 focus:border-white outline-none font-black text-white text-sm disabled:opacity-50" />
+                            {justSaved ? (
+                              <span className="bg-emerald-950/40 text-emerald-400 px-3 py-2.5 border border-emerald-800/50 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Saved!</span>
+                            ) : (
+                              <button onClick={() => handleFixturePredict(f.id)} disabled={!s.a.trim() || !s.b.trim()} className="bg-white text-black px-3 py-2.5 text-[10px] font-black uppercase tracking-wider hover:bg-zinc-200 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-default">Save</button>
+                            )}
+                          </div>
+                          {fixtureErrors[f.id] && (
+                            <p className="text-red-400 text-[10px] font-bold mt-1">{fixtureErrors[f.id]}</p>
                           )}
                         </div>
                       )}
