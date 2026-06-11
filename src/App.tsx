@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Tv, Trophy, User, LogOut, Award, Bell, Menu, X, 
-  ChevronRight, Shield, Flame
+  ChevronRight, Shield, Flame, Mail
 } from 'lucide-react';
 import { ViewType, UserProfile } from './types';
 
@@ -11,6 +11,7 @@ import GroupStageView from './components/GroupStageView';
 import BracketView from './components/BracketView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
+import ContactView from './components/ContactView';
 import { getAvatarUrl } from './avatar';
 import { getAlerts, Alert } from './api';
 
@@ -96,6 +97,7 @@ export default function App() {
 
     { id: 'LEADERBOARD', label: 'Leaderboard', icon: Award },
     { id: 'PROFILE', label: 'My profile', icon: User },
+    { id: 'CONTACT', label: 'Contact Us', icon: Mail },
   ];
 
   if (isLoading) {
@@ -209,6 +211,10 @@ export default function App() {
                 <p className="text-zinc-300 font-black text-sm">{user.points.toLocaleString()} PTS</p>
               </div>
               <div className="h-6 w-[1px] bg-zinc-800/10" />
+              <button onClick={() => setActiveView('CONTACT')} className="text-zinc-500 hover:text-zinc-300 font-black text-[10px] uppercase tracking-widest transition-colors cursor-pointer">
+                Contact
+              </button>
+              <div className="h-6 w-[1px] bg-zinc-800/10" />
               <div className="text-right">
                 <p className="text-zinc-500 text-[9px] font-extrabold tracking-widest uppercase">Streak</p>
                 <p className="text-[#4b3d2e] font-black text-sm">{user.winStreak} STREAK</p>
@@ -266,6 +272,10 @@ export default function App() {
 
           {activeView === 'PROFILE' && (
             <ProfileView user={user} />
+          )}
+
+          {activeView === 'CONTACT' && (
+            <ContactView />
           )}
         </main>
       </div>
