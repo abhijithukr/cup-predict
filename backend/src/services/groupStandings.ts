@@ -91,19 +91,18 @@ async function scoreGroupPredictions(groupName: string, first: string, second: s
     }
 
     if (points > 0) {
-      await prisma.$transaction([
-        prisma.groupPrediction.update({
-          where: { id: pred.id },
-          data: updateData,
-        }),
-        prisma.user.update({
-          where: { id: pred.userId },
-          data: { points: { increment: points } },
-        }),
-        prisma.pointEvent.create({
-          data: { userId: pred.userId, points: 0, earned: points, reason: 'group_position' },
-        }),
-      ]);
+      await prisma.groupPrediction.update({
+        where: { id: pred.id },
+        data: updateData,
+      });
+      await prisma.user.update({
+        where: { id: pred.userId },
+        data: { points: { increment: points } },
+      });
+      const user = await prisma.user.findUnique({ where: { id: pred.userId }, select: { points: true } });
+      await prisma.pointEvent.create({
+        data: { userId: pred.userId, points: user?.points ?? 0, earned: points, reason: 'group_position' },
+      });
     }
   }
 }

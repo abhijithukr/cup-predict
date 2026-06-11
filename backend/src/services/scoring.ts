@@ -4,7 +4,7 @@ async function recordPointEvent(userId: string, earned: number, reason: string) 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { points: true } });
   if (!user) return;
   await prisma.pointEvent.create({
-    data: { userId, points: user.points + earned, earned, reason },
+    data: { userId, points: user.points, earned, reason },
   });
 }
 
