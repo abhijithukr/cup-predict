@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TrendingUp, Award, Clock, History, PlaySquare, Check, Tv, Trophy, ChevronUp, MessageSquare, User, ArrowRight } from 'lucide-react';
 import { UserProfile } from '../types';
 import { getNextFixture, getFixtures, submitPrediction, getFixtureStats, getLeaderboard } from '../api';
@@ -25,6 +25,7 @@ interface DashboardViewProps {
 
 export default function DashboardView({ user, onNavigate }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState<'HUB' | 'MATCH_CENTER'>('HUB');
+  const fixturesRef = useRef<HTMLDivElement>(null);
 
   const [nextFixture, setNextFixture] = useState<any>(null);
   const [countdown, setCountdown] = useState<string>('');
@@ -165,7 +166,10 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
         </div>
         <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center">
           <button
-            onClick={() => setActiveTab('MATCH_CENTER')}
+            onClick={() => {
+              setActiveTab('HUB');
+              setTimeout(() => fixturesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+            }}
             className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all cursor-pointer"
           >
             Predict Score
@@ -275,7 +279,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
           </section>
 
           {allFixtures.length > 0 && (
-            <section id="all-fixtures" className="space-y-4">
+            <section id="all-fixtures" ref={fixturesRef} className="space-y-4">
               <h3 className="text-lg font-black text-white uppercase tracking-tighter">All Fixtures</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFixtures.map((f: any) => {
