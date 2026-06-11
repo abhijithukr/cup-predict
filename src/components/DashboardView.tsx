@@ -83,7 +83,10 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
       const list = data.value || data || [];
       setAllFixtures(list);
       const init: Record<string, { a: string; b: string }> = {};
-      list.forEach((f: any) => { init[f.id] = { a: '', b: '' }; });
+      list.forEach((f: any) => {
+        const pred = f.predictions?.length > 0 ? f.predictions[0] : null;
+        init[f.id] = { a: pred ? String(pred.scoreA) : '', b: pred ? String(pred.scoreB) : '' };
+      });
       setFixtureScores(init);
     } catch { setAllFixtures([]); }
   }
