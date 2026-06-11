@@ -10,7 +10,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const users = await prisma.user.findMany({
       where: whereFilter,
-      orderBy: { points: 'desc' },
+      orderBy: [{ points: 'desc' }, { username: 'asc' }],
       include: { _count: { select: { predictions: true } } },
     });
 

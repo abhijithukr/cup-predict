@@ -14,7 +14,14 @@ async function enrichUser(user: any) {
   const accuracy = finishedCount > 0 && predictionsCount > 0
     ? Math.round((correctPredictions / predictionsCount) * 100)
     : null;
-  const rank = (await prisma.user.count({ where: { points: { gt: user.points } } })) + 1;
+  const rank = (await prisma.user.count({
+    where: {
+      OR: [
+        { points: { gt: user.points } },
+        { points: user.points, username: { lt: user.username } }
+      ]
+    }
+  })) + 1;
   const { passwordHash, ...safe } = user;
   return { ...safe, accuracy, predictionsCount, rank };
 }
