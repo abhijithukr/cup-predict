@@ -51,6 +51,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
     const interval = setInterval(() => {
       loadNextFixture();
       loadLeaderboard();
+      loadLiveData();
     }, 15000);
     return () => clearInterval(interval);
   }, [user]);
@@ -106,7 +107,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
     try {
       const data = await getFixtures();
       const list = data.value || data || [];
-      const live = list.find((f: any) => f.status === 'live' || (f.isClosed === false && new Date(f.kickoffTime) <= new Date() && f.isClosed === false));
+      const live = list.find((f: any) => f.status === 'live' || (!f.isClosed && new Date(f.kickoffTime) <= new Date()));
       setLiveFixture(live || null);
       if (live) {
         try { const stats = await getFixtureStats(live.id); setFixtureStats(stats); } catch { setFixtureStats(null); }
@@ -164,7 +165,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center gap-4 w-full md:w-1/3">
             <div className="w-24 h-24 md:w-28 md:h-28 bg-zinc-900 flex items-center justify-center p-3 border border-zinc-800">
-              <img className="w-full h-full object-contain" src={flagUrl(nextFixture.teamACode)} alt={nextFixture.teamA?.name} />
+              <img loading="lazy" className="w-full h-full object-contain" src={flagUrl(nextFixture.teamACode)} alt={nextFixture.teamA?.name} />
             </div>
             <div className="text-center">
               <h4 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">{nextFixture.teamA?.name || nextFixture.teamACode}</h4>
@@ -180,7 +181,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
           </div>
           <div className="flex flex-col items-center gap-4 w-full md:w-1/3">
             <div className="w-24 h-24 md:w-28 md:h-28 bg-zinc-900 flex items-center justify-center p-3 border border-zinc-800">
-              <img className="w-full h-full object-contain" src={flagUrl(nextFixture.teamBCode)} alt={nextFixture.teamB?.name} />
+              <img loading="lazy" className="w-full h-full object-contain" src={flagUrl(nextFixture.teamBCode)} alt={nextFixture.teamB?.name} />
             </div>
             <div className="text-center">
               <h4 className="text-lg md:text-xl font-black text-white uppercase tracking-tight">{nextFixture.teamB?.name || nextFixture.teamBCode}</h4>
@@ -209,7 +210,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
         <div key={item.id} className={`flex items-center justify-between p-4 ${i < leaderboard.length - 1 ? 'border-b border-zinc-800' : ''} hover:bg-zinc-900/40 transition-colors`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 border border-zinc-700 overflow-hidden bg-zinc-900">
-              <img className="w-full h-full object-cover" src={getAvatarUrl(item.fullName || item.username, item.avatarUrl)} alt={item.username} />
+              <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(item.fullName || item.username, item.avatarUrl)} alt={item.username} />
             </div>
             <div>
               <p className="font-bold text-white text-xs uppercase tracking-wider">{item.fullName || item.username}</p>
@@ -304,14 +305,14 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                       <div className="flex items-center justify-between mb-3 border-b border-zinc-800 pb-2">
                         <span className="bg-zinc-900 text-zinc-300 border border-zinc-800 text-[9px] uppercase tracking-widest font-black px-2.5 py-0.5">{f.groupName}</span>
                         <div className="flex gap-1">
-                          {f.status === 'live' && <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">LIVE</span>}
+                          {f.status === 'live' && !f.isClosed && <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">LIVE</span>}
                           {f.isClosed && <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">CLOSED</span>}
                         </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 mb-4">
                         <div className="flex flex-col items-center gap-1.5 flex-1 text-center">
                           <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 flex items-center justify-center p-1">
-                            <img className="w-full h-full object-contain" src={flagUrl(f.teamACode)} alt="" />
+                            <img loading="lazy" className="w-full h-full object-contain" src={flagUrl(f.teamACode)} alt="" />
                           </div>
                           <span className="font-extrabold text-xs text-white uppercase tracking-wide">{f.teamA?.name || f.teamACode}</span>
                         </div>

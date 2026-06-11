@@ -92,7 +92,7 @@ export default function BracketView() {
   function handlePick(roundKey: RoundKey, matchIdx: number, team: 'A' | 'B') {
     if (isLocked || !bracket) return;
     const next = JSON.parse(JSON.stringify(bracket)) as BracketTree;
-    const match = next[roundKey][matchIdx];
+    const match: BracketMatch = roundKey === 'final' ? (next.final as BracketMatch) : (next[roundKey] as BracketMatch[])[matchIdx];
     if (!match) return;
     const code = team === 'A' ? match.teamA : match.teamB;
     if (!code) return;
@@ -230,7 +230,7 @@ export default function BracketView() {
             : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white disabled:opacity-50'
         }`}
       >
-        <img src={flagUrl(code)} className="w-6 h-4 object-contain shrink-0" alt="" />
+        <img loading="lazy" src={flagUrl(code)} className="w-6 h-4 object-contain shrink-0" alt="" />
         <span className="flex-1 text-left truncate">{teamNames[code] || code}</span>
 
         {isWinner && <Check size={14} className="shrink-0" />}

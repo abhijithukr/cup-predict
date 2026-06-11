@@ -70,7 +70,6 @@ export default function App() {
         setIsAuthenticated(true);
       } catch {
         localStorage.removeItem('jwt_token');
-        localStorage.removeItem('user_profile');
       } finally {
         setIsLoading(false);
       }
@@ -79,7 +78,6 @@ export default function App() {
 
   const handleLogin = (userData: any, token: string) => {
     localStorage.setItem('jwt_token', token);
-    localStorage.setItem('user_profile', JSON.stringify(userData));
     setUser(mapUser(userData));
     setIsAuthenticated(true);
     setActiveView('DASHBOARD');
@@ -134,7 +132,7 @@ export default function App() {
             {user.points.toLocaleString()} PTS
           </span>
           <div className="w-8 h-8 overflow-hidden border border-zinc-500/15">
-            <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
+            <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
           </div>
         </div>
       </header>
@@ -160,7 +158,7 @@ export default function App() {
                     setActiveView(item.id as ViewType);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full py-3.5 px-4 font-black text-[11px] uppercase tracking-[0.2em] text-left flex items-center gap-3 transition-all cursor-pointer duration-200 border-b border-zinc-805/10 ${isActive ? 'bg-zinc-900 text-zinc-300 border-l-2 border-zinc-400' : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-400'}`}
+                  className={`w-full py-3.5 px-4 font-black text-[11px] uppercase tracking-[0.2em] text-left flex items-center gap-3 transition-all cursor-pointer duration-200 border-b border-zinc-800/10 ${isActive ? 'bg-zinc-900 text-zinc-300 border-l-2 border-zinc-400' : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-400'}`}
                 >
                   <Icon size={14} className={isActive ? 'text-zinc-300' : 'text-zinc-500'} />
                   <span>{item.label}</span>
@@ -174,7 +172,7 @@ export default function App() {
           <div className="bg-zinc-900 border border-zinc-500/10 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 overflow-hidden border border-zinc-500/10 shadow-lg">
-                <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
+                <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="avatar" />
               </div>
               <div>
                 <p className="font-black text-xs uppercase tracking-wider text-zinc-300">{user.fullName}</p>
@@ -201,7 +199,7 @@ export default function App() {
         <header className="hidden lg:flex items-center justify-between px-10 py-6 bg-zinc-950 border-b border-zinc-500/10 z-20">
           <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 tracking-widest uppercase">
             <span>COLLEGE OF ENGINEERING TRIVANDRUM</span>
-            <ChevronRight size={12} className="text-zinc-650" />
+            <ChevronRight size={12} className="text-zinc-500" />
             <span className="text-zinc-350 font-black">{activeView}</span>
           </div>
 

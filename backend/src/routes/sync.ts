@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { syncAllFixtures, syncLiveScores, processFinishedMatches, clearOldData } from '../services/sync';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, adminMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/fixtures', authMiddleware, async (req: Request, res: Response) => {
+router.post('/fixtures', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     if (req.query.clear === 'true') {
       await clearOldData();
@@ -17,7 +17,7 @@ router.post('/fixtures', authMiddleware, async (req: Request, res: Response) => 
   }
 });
 
-router.post('/livescores', authMiddleware, async (_req: Request, res: Response) => {
+router.post('/livescores', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
   try {
     await syncLiveScores();
     const scored = await processFinishedMatches();

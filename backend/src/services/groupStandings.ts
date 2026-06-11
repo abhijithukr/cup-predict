@@ -75,33 +75,35 @@ async function scoreGroupPredictions(groupName: string, first: string, second: s
 
   for (const pred of predictions) {
     let points = 0;
-    const updateData: Record<string, boolean> = {};
 
-    if (!pred.scoredFirst && pred.firstCode === first) {
-      points += 5;
-      updateData.scoredFirst = true;
-    }
-    if (!pred.scoredSecond && pred.secondCode === second) {
-      points += 5;
-      updateData.scoredSecond = true;
-    }
-    if (!pred.scoredThird && pred.thirdCode && pred.thirdCode === third) {
-      points += 5;
-      updateData.scoredThird = true;
-    }
+    const firstOk = !pred.scoredFirst && pred.firstCode === first;
+    const secondOk = !pred.scoredSecond && pred.secondCode === second;
+    const thirdOk = !pred.scoredThird && pred.thirdCode && pred.thirdCode === third;
+
+    if (firstOk) points += 5;
+    if (secondOk) points += 5;
+    if (thirdOk) points += 5;
 
     if (points > 0) {
-      await prisma.groupPrediction.update({
-        where: { id: pred.id },
-        data: updateData,
-      });
-      await prisma.user.update({
-        where: { id: pred.userId },
-        data: { points: { increment: points } },
-      });
-      const user = await prisma.user.findUnique({ where: { id: pred.userId }, select: { points: true } });
-      await prisma.pointEvent.create({
-        data: { userId: pred.userId, points: user?.points ?? 0, earned: points, reason: 'group_position' },
+      await prisma.$transaction(async (tx: any) => {
+        if (firstOk) {
+          const r = await tx.groupPrediction.updateMany({ where: { id: pred.id, scoredFirst: false }, data: { scoredFirst: true } });
+          if (r.count === 0) points -= 5;
+        }
+        if (secondOk) {
+          const r = await tx.groupPrediction.updateMany({ where: { id: pred.id, scoredSecond: false }, data: { scoredSecond: true } });
+          if (r.count === 0) points -= 5;
+        }
+        if (thirdOk) {
+          const r = await tx.groupPrediction.updateMany({ where: { id: pred.id, scoredThird: false }, data: { scoredThird: true } });
+          if (r.count === 0) points -= 5;
+        }
+
+        if (points > 0) {
+          await tx.user.update({ where: { id: pred.userId }, data: { points: { increment: points } } });
+          const u = await tx.user.findUnique({ where: { id: pred.userId }, select: { points: true } });
+          await tx.pointEvent.create({ data: { userId: pred.userId, points: u?.points ?? 0, earned: points, reason: 'group_position' } });
+        }
       });
     }
   }

@@ -190,7 +190,7 @@ export default function GroupStageView() {
 
                   return (
                     <div key={team.code} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 p-2.5">
-                      <img src={flagUrl(team.code)} className="w-6 h-4 object-contain shrink-0" alt="" />
+                      <img loading="lazy" src={flagUrl(team.code)} className="w-6 h-4 object-contain shrink-0" alt="" />
                       <span className="flex-1 text-xs font-bold text-zinc-300 uppercase tracking-wider truncate">
                         {team.name}
                       </span>

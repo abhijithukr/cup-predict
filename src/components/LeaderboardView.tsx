@@ -69,9 +69,9 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
   };
 
   const filteredUsers = getFilteredData();
-  const top1 = leaderboardData.find((u: any) => u.rank === 1);
-  const top2 = leaderboardData.find((u: any) => u.rank === 2);
-  const top3 = leaderboardData.find((u: any) => u.rank === 3);
+  const top1 = filteredUsers.find((u: any) => u.rank === 1);
+  const top2 = filteredUsers.find((u: any) => u.rank === 2);
+  const top3 = filteredUsers.find((u: any) => u.rank === 3);
 
   if (loading) {
     return (
@@ -99,7 +99,7 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
           <div className="flex flex-col items-center order-2 md:order-1 transition-transform hover:translate-y-[-4px] duration-300">
             <div className="relative mb-3">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-350 overflow-hidden shadow-md ring-4 ring-white bg-white">
-                <img className="w-full h-full object-cover" src={getAvatarUrl(top2.fullName || top2.username, top2.avatarUrl)} alt="2nd place avatar" />
+                <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(top2.fullName || top2.username, top2.avatarUrl)} alt="2nd place avatar" />
               </div>
               <div className="absolute -bottom-1 -right-1 bg-slate-400 text-white p-1 rounded-full border border-white shadow-md">
                 <Medal size={16} />
@@ -123,7 +123,7 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
             </div>
             <div className="relative mb-3">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 overflow-hidden shadow-lg ring-4 ring-white bg-white">
-                <img className="w-full h-full object-cover" src={getAvatarUrl(top1.fullName || top1.username, top1.avatarUrl)} alt="1st place avatar" />
+                <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(top1.fullName || top1.username, top1.avatarUrl)} alt="1st place avatar" />
               </div>
               <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-white p-1.5 rounded-full border border-white shadow-lg">
                 <Trophy size={18} />
@@ -149,7 +149,7 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
           <div className="flex flex-col items-center order-3 md:order-3 transition-transform hover:translate-y-[-4px] duration-300">
             <div className="relative mb-3">
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-505 overflow-hidden shadow-md ring-4 ring-white bg-white">
-                <img className="w-full h-full object-cover" src={getAvatarUrl(top3.fullName || top3.username, top3.avatarUrl)} alt="3rd place avatar" />
+                <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(top3.fullName || top3.username, top3.avatarUrl)} alt="3rd place avatar" />
               </div>
               <div className="absolute -bottom-1 -right-1 bg-amber-600 text-white p-1 rounded-full border border-white shadow-md">
                 <Award size={16} />
@@ -231,14 +231,14 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
                         ) : (
                           <span>{item.rank}</span>
                         )}
-                        {item.isCurrentUser && <Star size={12} fill="currentColor" className="text-yellow-500 animate-spin-slow" />}
+                        {item.isCurrentUser && <Star size={12} fill="currentColor" className="text-yellow-500 animate-pulse" />}
                       </div>
                     </td>
 
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 flex-shrink-0 bg-gray-50">
-                          <img className="w-full h-full object-cover" src={getAvatarUrl(item.fullName || item.username, item.avatarUrl)} alt="avatar" />
+                          <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(item.fullName || item.username, item.avatarUrl)} alt="avatar" />
                         </div>
                         <span className={`font-bold text-sm leading-none ${item.isCurrentUser ? 'text-[#006e2f]' : 'text-[#0b1c30]'}`}>
                           {item.username}

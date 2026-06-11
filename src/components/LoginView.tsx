@@ -89,7 +89,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div id="login-error" className="p-3 bg-red-150 text-red-800 text-xs font-semibold uppercase tracking-wider rounded-none border border-red-200">
+              <div id="login-error" className="p-3 bg-red-100 text-red-800 text-xs font-semibold uppercase tracking-wider rounded-none border border-red-200">
                 {error}
               </div>
             )}
@@ -136,7 +136,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             <div className="space-y-2">
               <label className="font-bold text-[10px] uppercase tracking-widest text-zinc-500 block px-1" htmlFor="username">Username</label>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-zinc-650 transition-colors">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-zinc-300 transition-colors">
                   <User size={16} />
                 </span>
                 <input 
@@ -153,7 +153,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
                 <label className="font-bold text-[10px] uppercase tracking-widest text-zinc-500" htmlFor="password">Password</label>
               </div>
               <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-zinc-650 transition-colors">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-zinc-300 transition-colors">
                   <Lock size={16} />
                 </span>
                 <input 
@@ -188,13 +188,13 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
             <p className="text-xs text-zinc-500 uppercase tracking-wider">
               {mode === 'LOGIN' ? (
                 <>No account?{' '}
-                  <button className="text-zinc-350 font-black hover:underline decoration-1 underline-offset-4 bg-transparent border-none cursor-pointer" onClick={() => { setMode('REGISTER'); setError(''); }}>
+                  <button className="text-zinc-400 font-black hover:underline decoration-1 underline-offset-4 bg-transparent border-none cursor-pointer" onClick={() => { setMode('REGISTER'); setError(''); }}>
                     Join League
                   </button>
                 </>
               ) : (
                 <>Already registered?{' '}
-                  <button className="text-zinc-350 font-black hover:underline decoration-1 underline-offset-4 bg-transparent border-none cursor-pointer" onClick={() => { setMode('LOGIN'); setError(''); }}>
+                  <button className="text-zinc-400 font-black hover:underline decoration-1 underline-offset-4 bg-transparent border-none cursor-pointer" onClick={() => { setMode('LOGIN'); setError(''); }}>
                     Sign In
                   </button>
                 </>

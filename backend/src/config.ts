@@ -8,4 +8,12 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
   rapidApiKey: process.env.RAPIDAPI_KEY || '',
   rapidApiHost: 'sportapi7.p.rapidapi.com',
+  adminUsername: process.env.ADMIN_USERNAME || '',
 };
+
+if (!process.env.JWT_SECRET) {
+  console.warn('[config] WARNING: JWT_SECRET not set. Using insecure fallback. Set JWT_SECRET in production.');
+}
+if (!process.env.ADMIN_USERNAME) {
+  console.warn('[config] WARNING: ADMIN_USERNAME not set. Admin endpoints will reject all requests.');
+}

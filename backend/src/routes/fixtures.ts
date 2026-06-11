@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, adminMiddleware } from '../middleware/auth';
 import { computeAllGroupStandings } from '../services/groupStandings';
 import { scoreFixture } from '../services/scoring';
 
@@ -25,7 +25,7 @@ router.get('/next', authMiddleware, async (req: Request, res: Response) => {
     const fixture = await prisma.fixture.findFirst({
       where: {
         isClosed: false,
-        kickoffTime: { gt: now },
+        kickoffTime: { gte: now },
       },
       include: { teamA: true, teamB: true, predictions: { where: { userId: req.user!.userId } } },
       orderBy: { kickoffTime: 'asc' },
@@ -41,11 +41,11 @@ router.get('/next', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const fixture = await prisma.fixture.findUnique({
       where: { id: req.params.id },
-      include: { teamA: true, teamB: true, predictions: true },
+      include: { teamA: true, teamB: true, predictions: { where: { userId: req.user!.userId } } },
     });
     if (!fixture) {
       res.status(404).json({ error: 'Fixture not found' });
@@ -58,7 +58,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id/stats', async (req: Request, res: Response) => {
+router.get('/:id/stats', authMiddleware, async (req: Request, res: Response) => {
   try {
     const predictions = await prisma.prediction.findMany({
       where: { fixtureId: req.params.id },
@@ -83,24 +83,43 @@ router.get('/:id/stats', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/result', authMiddleware, async (req: Request, res: Response) => {
+router.post('/result', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { fixtureId, scoreA, scoreB } = req.body;
 
-    const fixture = await prisma.fixture.update({
-      where: { id: fixtureId },
-      data: { actualScoreA: scoreA, actualScoreB: scoreB, isClosed: true },
-      include: { predictions: true },
-    });
-
-    for (const pred of fixture.predictions) {
-      if (pred.status !== 'OPEN') continue;
-      await scoreFixture(pred.id, scoreA, scoreB);
+    if (!fixtureId || scoreA === undefined || scoreB === undefined || !Number.isInteger(scoreA) || !Number.isInteger(scoreB) || scoreA < 0 || scoreB < 0) {
+      res.status(400).json({ error: 'Valid fixtureId, scoreA, and scoreB required' });
+      return;
     }
+
+    await prisma.$transaction(async (tx: any) => {
+      const fixture = await tx.fixture.update({
+        where: { id: fixtureId },
+        data: { actualScoreA: scoreA, actualScoreB: scoreB, isClosed: true },
+        include: { predictions: true },
+      });
+
+      for (const pred of fixture.predictions) {
+        if (pred.status !== 'OPEN') continue;
+        const correct = pred.scoreA === scoreA && pred.scoreB === scoreB;
+        const pts = correct ? 15 : 0;
+        await tx.prediction.update({
+          where: { id: pred.id },
+          data: { status: correct ? 'CORRECT' : 'INCORRECT', pointsEarned: pts },
+        });
+        if (correct) {
+          await tx.user.update({ where: { id: pred.userId }, data: { points: { increment: pts }, winStreak: { increment: 1 } } });
+          const u = await tx.user.findUnique({ where: { id: pred.userId }, select: { points: true } });
+          await tx.pointEvent.create({ data: { userId: pred.userId, points: u?.points ?? 0, earned: pts, reason: 'match_correct' } });
+        } else {
+          await tx.user.update({ where: { id: pred.userId }, data: { winStreak: 0 } });
+        }
+      }
+    });
 
     await computeAllGroupStandings();
 
-    res.json(fixture);
+    res.json({ message: 'Result submitted' });
   } catch (err) {
     console.error('Submit result error:', err);
     res.status(500).json({ error: 'Failed to submit result' });

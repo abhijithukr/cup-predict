@@ -113,7 +113,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
           
           <div className="relative">
             <div className="w-24 h-24 md:w-28 md:h-28 rounded-full border-4 border-[#006e2f] bg-white overflow-hidden shadow-md">
-              <img className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="Avatar" />
+              <img loading="lazy" className="w-full h-full object-cover" src={getAvatarUrl(user.fullName || user.username, user.avatarUrl)} alt="Avatar" />
             </div>
             <span className="absolute bottom-1 right-1 bg-[#006e2f] text-white p-1 rounded-full border border-white">
               <Star size={16} fill="currentColor" />
@@ -123,7 +123,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
           <div className="flex-grow text-center md:text-left">
             <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1.5 justify-center md:justify-start">
               <h2 className="text-2xl md:text-3xl font-black text-[#0b1c30]">{user.fullName}</h2>
-              <span className="bg-[#eff4ff] text-[#0051d5] border border-blue-105 font-bold text-xs px-3 py-0.5 rounded-full inline-block self-center">
+              <span className="bg-[#eff4ff] text-[#0051d5] border border-blue-100 font-bold text-xs px-3 py-0.5 rounded-full inline-block self-center">
                 CET Football League
               </span>
             </div>
@@ -290,7 +290,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                       <span className="font-extrabold text-[#0b1c30] text-sm md:text-base text-right">{pred.teamA}</span>
                       <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
                         {FLAG_MAP[pred.teamAFlag] ? (
-                          <img className="w-full h-full object-cover" src={FLAG_MAP[pred.teamAFlag]} alt="flag" />
+                          <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamAFlag]} alt="flag" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">
                             {pred.teamAFlag}
@@ -320,7 +320,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                     <div className="flex items-center gap-2 w-32 justify-start">
                       <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
                         {FLAG_MAP[pred.teamBFlag] ? (
-                          <img className="w-full h-full object-cover" src={FLAG_MAP[pred.teamBFlag]} alt="flag" />
+                          <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamBFlag]} alt="flag" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">
                             {pred.teamBFlag}
@@ -332,7 +332,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                   </div>
 
                   <div className="flex flex-row md:flex-col items-center gap-2 shrink-0 justify-end">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isCorrect ? 'bg-green-150/15 text-[#006e2f] bg-green-100' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isCorrect ? 'bg-green-100 text-[#006e2f]' : 'bg-red-100 text-red-700'}`}>
                       {isCorrect ? 'Correct' : pred.status === 'OPEN' ? 'Pending' : 'Incorrect'}
                     </span>
                     <span className="text-xs font-mono font-black text-gray-700">

@@ -19,6 +19,18 @@ export function generateToken(payload: AuthPayload): string {
   return jwt.sign(payload, config.jwtSecret, { expiresIn: '7d' });
 }
 
+export function adminMiddleware(req: Request, res: Response, next: NextFunction): void {
+  if (!config.adminUsername) {
+    res.status(403).json({ error: 'Admin not configured' });
+    return;
+  }
+  if (req.user?.username !== config.adminUsername) {
+    res.status(403).json({ error: 'Admin access required' });
+    return;
+  }
+  next();
+}
+
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
