@@ -132,11 +132,11 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
             </span>
           )}
         </div>
-        <button onClick={() => onNavigate('GROUP_STAGE')} className="text-zinc-400 hover:text-white font-black uppercase tracking-widest text-[10px] border-b border-zinc-700 hover:border-white transition-all py-1">
+        <button onClick={() => fixturesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="text-zinc-400 hover:text-white font-black uppercase tracking-widest text-[10px] border-b border-zinc-700 hover:border-white transition-all py-1">
           Full Schedule
         </button>
       </div>
-      <div className="bg-zinc-950 p-6 md:p-8 border border-zinc-800 cursor-pointer hover:border-zinc-600 transition-all" onClick={() => onNavigate('GROUP_STAGE')}>
+      <div className="bg-zinc-950 p-6 md:p-8 border border-zinc-800">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center gap-4 w-full md:w-1/3">
             <div className="w-24 h-24 md:w-28 md:h-28 bg-zinc-900 flex items-center justify-center p-3 border border-zinc-800">
