@@ -171,19 +171,19 @@ export default function LeaderboardView({ currentUser }: LeaderboardViewProps) {
         <div className="flex bg-white/80 rounded-full p-1 border border-gray-200 shadow-sm w-full md:w-auto">
           <button 
             onClick={() => setActiveTab('GLOBAL')}
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'GLOBAL' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'GLOBAL' ? 'bg-[#0051d5] text-white' : 'text-gray-500 hover:text-gray-900'}`}
           >
             Global List
           </button>
           <button 
             onClick={() => setActiveTab('FRIENDS')}
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'FRIENDS' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'FRIENDS' ? 'bg-[#0051d5] text-white' : 'text-gray-500 hover:text-gray-900'}`}
           >
             Friends Club
           </button>
           <button 
             onClick={() => setActiveTab('DEPT')}
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'DEPT' ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer ${activeTab === 'DEPT' ? 'bg-[#0051d5] text-white' : 'text-gray-500 hover:text-gray-900'}`}
           >
             My Department
           </button>
