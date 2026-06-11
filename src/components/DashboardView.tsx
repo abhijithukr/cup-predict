@@ -165,10 +165,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
         </div>
         <div className="mt-8 pt-6 border-t border-zinc-800 flex flex-col items-center">
           <button
-            onClick={() => {
-              const el = document.getElementById('all-fixtures');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => setActiveTab('MATCH_CENTER')}
             className="px-8 py-3.5 bg-white text-black font-black text-xs uppercase tracking-[0.25em] hover:bg-zinc-200 transition-all cursor-pointer"
           >
             Predict Score
