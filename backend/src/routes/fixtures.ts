@@ -5,10 +5,10 @@ import { computeAllGroupStandings } from '../services/groupStandings';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const fixtures = await prisma.fixture.findMany({
-      include: { teamA: true, teamB: true, predictions: true },
+      include: { teamA: true, teamB: true, predictions: { where: { userId: req.user!.userId } } },
       orderBy: { kickoffTime: 'asc' },
     });
     res.json({ value: fixtures, Count: fixtures.length });
