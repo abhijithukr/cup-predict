@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, MatchPrediction } from '../types';
 import { FLAG_MAP } from '../initialData';
-import { getPredictionHistory, getPointHistory, PointEvent } from '../api';
+import { getPredictionHistory, getPointHistory, getLeaderboard, PointEvent } from '../api';
 import { Award, Star, History, Calendar, TrendingUp, Trophy } from 'lucide-react';
 import { getAvatarUrl } from '../avatar';
 
@@ -36,6 +36,8 @@ export default function ProfileView({ user }: ProfileViewProps) {
   const [loading, setLoading] = useState(true);
   const [pointEvents, setPointEvents] = useState<PointEvent[]>([]);
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; pts: number } | null>(null);
+  const [liveRank, setLiveRank] = useState<number>(user.rank);
+  const [livePoints, setLivePoints] = useState<number>(user.points);
 
   useEffect(() => {
     (async () => {
@@ -60,6 +62,20 @@ export default function ProfileView({ user }: ProfileViewProps) {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getLeaderboard();
+        const list = Array.isArray(data) ? data : [];
+        const me = list.find((item: any) => item.id === user.id);
+        if (me) {
+          setLiveRank(me.rank);
+          setLivePoints(me.points);
+        }
+      } catch { /* ignore */ }
+    })();
+  }, [user.id]);
+
   // Build daily cumulative point history
   const pointHistoryData = (() => {
     if (pointEvents.length === 0) return [];
@@ -77,7 +93,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
     return daily;
   })();
 
-  const chartPoints = pointHistoryData.length > 0 ? pointHistoryData : [{ date: 'Start', pts: 0 }, { date: 'Today', pts: user.points }];
+  const chartPoints = pointHistoryData.length > 0 ? pointHistoryData : [{ date: 'Start', pts: 0 }, { date: 'Today', pts: livePoints }];
   const maxPts = Math.max(...chartPoints.map(d => d.pts), 1);
   const minPts = Math.min(...chartPoints.map(d => d.pts), 0);
   const range = maxPts - minPts || 1;
@@ -138,7 +154,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
             </div>
             <div>
               <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">Rank</p>
-              <div className="text-3xl font-black text-[#0b1c30]">#{user.rank}</div>
+              <div className="text-3xl font-black text-[#0b1c30]">#{liveRank}</div>
             </div>
           </div>
         </div>
@@ -152,7 +168,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
           </div>
           <span className="bg-[#eff4ff] text-[#0051d5] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
             <TrendingUp size={14} />
-            {user.points} pts
+            {livePoints} pts
           </span>
         </div>
 

@@ -17,6 +17,7 @@ import { getAlerts, Alert } from './api';
 
 function mapUser(raw: any): UserProfile {
   return {
+    id: raw.id,
     username: raw.username,
     fullName: raw.fullName,
     email: raw.email || '',

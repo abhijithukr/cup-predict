@@ -40,6 +40,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   const [selectedFast, setSelectedFast] = useState<string | null>(null);
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboardFull, setLeaderboardFull] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,8 +96,10 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   async function loadLeaderboard() {
     try {
       const data = await getLeaderboard();
-      setLeaderboard(Array.isArray(data) ? data.slice(0, 3) : []);
-    } catch { setLeaderboard([]); }
+      const list = Array.isArray(data) ? data : [];
+      setLeaderboard(list.slice(0, 3));
+      setLeaderboardFull(list);
+    } catch { setLeaderboard([]); setLeaderboardFull([]); }
   }
 
   async function loadLiveData() {
@@ -134,6 +137,10 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
     setFixtureScores(prev => ({ ...prev, [id]: { ...prev[id], [side]: cleaned } }));
     setFixtureErrors(prev => ({ ...prev, [id]: '' }));
   }
+
+  const currentLeader = leaderboardFull.find((item: any) => item.id === user.id);
+  const liveRank = currentLeader?.rank ?? user.rank;
+  const livePoints = currentLeader?.points ?? user.points;
 
   const padZero = (n: number) => n.toString().padStart(2, '0');
 
@@ -241,7 +248,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                 <Award className="w-4 h-4" />
                 <span className="font-black text-[10px] uppercase tracking-widest text-zinc-400">Total Points</span>
               </div>
-              <div className="text-5xl font-black text-white tracking-tighter">{user.points}</div>
+              <div className="text-5xl font-black text-white tracking-tighter">{livePoints}</div>
             </div>
             <div className="bg-zinc-950 p-6 border border-zinc-800 relative overflow-hidden group">
               <div className="absolute -right-4 -bottom-4 text-zinc-800 opacity-30 group-hover:opacity-50 transition-opacity"><Trophy size={120} /></div>
@@ -249,7 +256,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                 <Trophy className="w-4 h-4" />
                 <span className="font-black text-[10px] uppercase tracking-widest text-zinc-400">Global Rank</span>
               </div>
-              <div className="text-5xl font-black text-white tracking-tighter">#{user.rank}</div>
+              <div className="text-5xl font-black text-white tracking-tighter">#{liveRank}</div>
             </div>
             <div className="bg-zinc-950 p-6 border border-zinc-800 relative overflow-hidden group cursor-pointer hover:border-zinc-600 transition-all" onClick={() => onNavigate('PROFILE')}>
               <div className="absolute -right-4 -bottom-4 text-zinc-800 opacity-30 group-hover:opacity-50 transition-opacity"><Trophy size={120} /></div>

@@ -1,6 +1,7 @@
 export type ViewType = 'LOGIN' | 'DASHBOARD' | 'PREDICTIONS' | 'GROUP_STAGE' | 'KNOCKOUTS' | 'LEADERBOARD' | 'PROFILE' | 'CONTACT';
 
 export interface UserProfile {
+  id: string;
   username: string;
   fullName: string;
   email: string;
