@@ -251,7 +251,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
               </div>
               <div className="text-5xl font-black text-white tracking-tighter">#{user.rank}</div>
             </div>
-            <div className="bg-zinc-950 p-6 border border-zinc-800 relative overflow-hidden group">
+            <div className="bg-zinc-950 p-6 border border-zinc-800 relative overflow-hidden group cursor-pointer hover:border-zinc-600 transition-all" onClick={() => onNavigate('PROFILE')}>
               <div className="absolute -right-4 -bottom-4 text-zinc-800 opacity-30 group-hover:opacity-50 transition-opacity"><Trophy size={120} /></div>
               <div className="flex items-center gap-1.5 text-zinc-400 mb-3">
                 <History className="w-4 h-4" />
