@@ -32,7 +32,7 @@ function mapPrediction(p: any): MatchPrediction {
 }
 
 export default function ProfileView({ user }: ProfileViewProps) {
-  const [pastPredictions, setPastPredictions] = useState<MatchPrediction[]>([]);
+  const [allPredictions, setAllPredictions] = useState<MatchPrediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [pointEvents, setPointEvents] = useState<PointEvent[]>([]);
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; pts: number } | null>(null);
@@ -44,7 +44,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
       try {
         const data = await getPredictionHistory();
         const list = Array.isArray(data) ? data : data.predictions || [];
-        setPastPredictions(list.map(mapPrediction));
+        setAllPredictions(list.map(mapPrediction));
       } catch {
         // fallback
       } finally {
@@ -104,6 +104,10 @@ export default function ProfileView({ user }: ProfileViewProps) {
   const stepX = chartPoints.length > 1 ? (chartW - 50) / (chartPoints.length - 1) : 0;
 
   const ptsToY = (pts: number) => chartH - ((pts - minPts) / range) * (chartH - padY * 2) + padY;
+
+  const now = new Date();
+  const upcomingPredictions = allPredictions.filter((p) => !p.isClosed && p.actualScoreA == null);
+  const finishedPredictions = allPredictions.filter((p) => p.isClosed || p.actualScoreA != null);
 
   return (
     <div className="w-full space-y-8">
@@ -251,24 +255,90 @@ export default function ProfileView({ user }: ProfileViewProps) {
         </div>
       </section>
 
+      {upcomingPredictions.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="font-extrabold text-xl text-[#0b1c30] flex items-center gap-2">
+            <Calendar size={20} className="text-gray-600" />
+            Upcoming Predictions
+          </h3>
+          <div className="grid grid-cols-1 gap-4">
+            {upcomingPredictions.map((pred) => (
+              <div key={pred.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col md:flex-row items-center p-5 md:p-6 justify-between gap-4">
+                <div className="flex flex-col items-center md:items-start text-center md:text-left shrink-0">
+                  <span className="text-[10px] uppercase font-mono font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100">
+                    {pred.group}
+                  </span>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 flex items-center gap-1">
+                    <Calendar size={12} />
+                    {pred.dateLabel}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-6 justify-center flex-grow py-2">
+                  <div className="flex items-center gap-2 w-32 justify-end">
+                    <span className="font-extrabold text-[#0b1c30] text-sm md:text-base text-right">{pred.teamA}</span>
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                      {FLAG_MAP[pred.teamAFlag] ? (
+                        <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamAFlag]} alt="flag" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">{pred.teamAFlag}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="font-mono text-base md:text-lg font-black text-slate-800 bg-gray-100 px-3 py-1 rounded border border-gray-200">
+                      <span>{pred.userScoreA ?? '?'}</span>
+                      <span className="mx-1 text-gray-400 font-normal">-</span>
+                      <span>{pred.userScoreB ?? '?'}</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-gray-400 mt-1 uppercase">Your Pick</span>
+                  </div>
+
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="font-mono text-base md:text-lg font-black text-zinc-400 bg-zinc-50 px-3 py-1 rounded border border-zinc-200">
+                      <span>-</span>
+                      <span className="mx-1 text-zinc-300 font-normal">-</span>
+                      <span>-</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-zinc-400 mt-1 uppercase">Not Played</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-32 justify-start">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                      {FLAG_MAP[pred.teamBFlag] ? (
+                        <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamBFlag]} alt="flag" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">{pred.teamBFlag}</div>
+                      )}
+                    </div>
+                    <span className="font-extrabold text-[#0b1c30] text-sm md:text-base text-left">{pred.teamB}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="space-y-4">
         <h3 className="font-extrabold text-xl text-[#0b1c30] flex items-center gap-2">
           <History size={20} className="text-gray-600" />
-          Past Predictions History
+          Finished Matches
         </h3>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : pastPredictions.length === 0 ? (
+        ) : finishedPredictions.length === 0 ? (
           <div className="text-center py-12 bg-white border border-gray-200 rounded-xl">
             <Trophy size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">No predictions yet. Start by predicting group stage matches!</p>
+            <p className="text-gray-500 font-medium">No finished matches yet. Results will appear here after matches end!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {pastPredictions.map((pred) => {
+            {finishedPredictions.map((pred) => {
               const isCorrect = pred.status === 'CORRECT';
               return (
                 <div 
@@ -279,11 +349,9 @@ export default function ProfileView({ user }: ProfileViewProps) {
                     <span className="text-[10px] uppercase font-mono font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100">
                       {pred.group}
                     </span>
-                    {pred.status !== 'OPEN' && (
-                      <span className="text-[9px] uppercase font-mono font-extrabold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 mt-1">
-                        Match ended
-                      </span>
-                    )}
+                    <span className="text-[9px] uppercase font-mono font-extrabold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 mt-1">
+                      Match ended
+                    </span>
                     <span className="text-xs text-gray-500 font-semibold mt-1 flex items-center gap-1">
                       <Calendar size={12} />
                       {pred.dateLabel}
@@ -297,9 +365,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                         {FLAG_MAP[pred.teamAFlag] ? (
                           <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamAFlag]} alt="flag" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">
-                            {pred.teamAFlag}
-                          </div>
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">{pred.teamAFlag}</div>
                         )}
                       </div>
                     </div>
@@ -327,9 +393,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                         {FLAG_MAP[pred.teamBFlag] ? (
                           <img loading="lazy" className="w-full h-full object-cover" src={FLAG_MAP[pred.teamBFlag]} alt="flag" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">
-                            {pred.teamBFlag}
-                          </div>
+                          <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gray-100">{pred.teamBFlag}</div>
                         )}
                       </div>
                       <span className="font-extrabold text-[#0b1c30] text-sm md:text-base text-left">{pred.teamB}</span>
@@ -338,7 +402,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
 
                   <div className="flex flex-row md:flex-col items-center gap-2 shrink-0 justify-end">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isCorrect ? 'bg-green-100 text-[#006e2f]' : 'bg-red-100 text-red-700'}`}>
-                      {isCorrect ? 'Correct' : pred.status === 'OPEN' ? 'Pending' : 'Incorrect'}
+                      {isCorrect ? 'Correct' : 'Incorrect'}
                     </span>
                     <span className="text-xs font-mono font-black text-gray-700">
                       {isCorrect ? `+${pred.pointsEarned || 15} pts` : '0 pts'}
