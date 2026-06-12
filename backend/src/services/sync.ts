@@ -7,9 +7,9 @@ const TEAM_CODE_MAP: Record<string, string> = {
   'Mexico': 'MEX', 'South Africa': 'RSA', 'South Korea': 'KOR', 'Czechia': 'CZE',
   'Canada': 'CAN', 'Bosnia & Herzegovina': 'BIH', 'Qatar': 'QAT', 'Switzerland': 'SUI',
   'Brazil': 'BRA', 'Morocco': 'MAR', 'Haiti': 'HAI', 'Scotland': 'SCO',
-  'USA': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'Türkiye': 'TUR', 'Turkey': 'TUR',
-  'Germany': 'GER', 'Curaçao': 'CUR', 'Curacao': 'CUR',
-  "C\u00f4te d'Ivoire": 'CIV', 'Cote d\'Ivoire': 'CIV', 'Ivory Coast': 'CIV',
+  'USA': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'T\u00fcrkiye': 'TUR', 'Turkiye': 'TUR', 'Turkey': 'TUR',
+  'Germany': 'GER', 'Cura\u00e7ao': 'CUR', 'Curacao': 'CUR',
+  "C\u00f4te d'Ivoire": 'CIV', "Cote d'Ivoire": 'CIV', 'Ivory Coast': 'CIV',
   'Ecuador': 'ECU',
   'Netherlands': 'NED', 'Japan': 'JPN', 'Sweden': 'SWE', 'Tunisia': 'TUN',
   'Belgium': 'BEL', 'Egypt': 'EGY', 'IR Iran': 'IRN', 'Iran': 'IRN', 'New Zealand': 'NZL',
@@ -21,6 +21,100 @@ const TEAM_CODE_MAP: Record<string, string> = {
   'England': 'ENG', 'Croatia': 'CRO', 'Ghana': 'GHA', 'Panama': 'PAN',
   'Bosnia and Herzegovina': 'BIH',
 };
+
+interface FixtureSeed {
+  groupName: string;
+  home: string;
+  away: string;
+  kickoff: string;
+}
+
+const GROUP_FIXTURES: FixtureSeed[] = [
+  // Group A
+  { groupName: 'Group A', home: 'Mexico', away: 'South Africa', kickoff: '2026-06-11T19:00:00Z' },
+  { groupName: 'Group A', home: 'South Korea', away: 'Czechia', kickoff: '2026-06-12T02:00:00Z' },
+  { groupName: 'Group A', home: 'Czechia', away: 'South Africa', kickoff: '2026-06-18T16:00:00Z' },
+  { groupName: 'Group A', home: 'Mexico', away: 'South Korea', kickoff: '2026-06-19T01:00:00Z' },
+  { groupName: 'Group A', home: 'Czechia', away: 'Mexico', kickoff: '2026-06-25T01:00:00Z' },
+  { groupName: 'Group A', home: 'South Africa', away: 'South Korea', kickoff: '2026-06-25T01:00:00Z' },
+  // Group B
+  { groupName: 'Group B', home: 'Canada', away: 'Bosnia and Herzegovina', kickoff: '2026-06-12T19:00:00Z' },
+  { groupName: 'Group B', home: 'Qatar', away: 'Switzerland', kickoff: '2026-06-13T19:00:00Z' },
+  { groupName: 'Group B', home: 'Switzerland', away: 'Bosnia and Herzegovina', kickoff: '2026-06-18T19:00:00Z' },
+  { groupName: 'Group B', home: 'Canada', away: 'Qatar', kickoff: '2026-06-18T22:00:00Z' },
+  { groupName: 'Group B', home: 'Switzerland', away: 'Canada', kickoff: '2026-06-24T19:00:00Z' },
+  { groupName: 'Group B', home: 'Bosnia and Herzegovina', away: 'Qatar', kickoff: '2026-06-24T19:00:00Z' },
+  // Group C
+  { groupName: 'Group C', home: 'Brazil', away: 'Morocco', kickoff: '2026-06-13T22:00:00Z' },
+  { groupName: 'Group C', home: 'Haiti', away: 'Scotland', kickoff: '2026-06-14T01:00:00Z' },
+  { groupName: 'Group C', home: 'Brazil', away: 'Haiti', kickoff: '2026-06-19T01:00:00Z' },
+  { groupName: 'Group C', home: 'Scotland', away: 'Morocco', kickoff: '2026-06-19T22:00:00Z' },
+  { groupName: 'Group C', home: 'Scotland', away: 'Brazil', kickoff: '2026-06-24T22:00:00Z' },
+  { groupName: 'Group C', home: 'Morocco', away: 'Haiti', kickoff: '2026-06-24T22:00:00Z' },
+  // Group D
+  { groupName: 'Group D', home: 'USA', away: 'Paraguay', kickoff: '2026-06-13T01:00:00Z' },
+  { groupName: 'Group D', home: 'Australia', away: 'Turkiye', kickoff: '2026-06-14T04:00:00Z' },
+  { groupName: 'Group D', home: 'USA', away: 'Australia', kickoff: '2026-06-19T19:00:00Z' },
+  { groupName: 'Group D', home: 'Turkiye', away: 'Paraguay', kickoff: '2026-06-20T04:00:00Z' },
+  { groupName: 'Group D', home: 'Turkiye', away: 'USA', kickoff: '2026-06-26T20:00:00Z' },
+  { groupName: 'Group D', home: 'Paraguay', away: 'Australia', kickoff: '2026-06-26T20:00:00Z' },
+  // Group E
+  { groupName: 'Group E', home: 'Germany', away: 'Curacao', kickoff: '2026-06-14T17:00:00Z' },
+  { groupName: 'Group E', home: "Cote d'Ivoire", away: 'Ecuador', kickoff: '2026-06-14T23:00:00Z' },
+  { groupName: 'Group E', home: 'Germany', away: "Cote d'Ivoire", kickoff: '2026-06-20T20:00:00Z' },
+  { groupName: 'Group E', home: 'Ecuador', away: 'Curacao', kickoff: '2026-06-21T00:00:00Z' },
+  { groupName: 'Group E', home: 'Curacao', away: "Cote d'Ivoire", kickoff: '2026-06-25T20:00:00Z' },
+  { groupName: 'Group E', home: 'Ecuador', away: 'Germany', kickoff: '2026-06-25T20:00:00Z' },
+  // Group F
+  { groupName: 'Group F', home: 'Netherlands', away: 'Japan', kickoff: '2026-06-14T20:00:00Z' },
+  { groupName: 'Group F', home: 'Sweden', away: 'Tunisia', kickoff: '2026-06-15T02:00:00Z' },
+  { groupName: 'Group F', home: 'Netherlands', away: 'Sweden', kickoff: '2026-06-20T17:00:00Z' },
+  { groupName: 'Group F', home: 'Tunisia', away: 'Japan', kickoff: '2026-06-21T04:00:00Z' },
+  { groupName: 'Group F', home: 'Tunisia', away: 'Netherlands', kickoff: '2026-06-26T18:00:00Z' },
+  { groupName: 'Group F', home: 'Japan', away: 'Sweden', kickoff: '2026-06-26T18:00:00Z' },
+  // Group G
+  { groupName: 'Group G', home: 'Belgium', away: 'Egypt', kickoff: '2026-06-15T19:00:00Z' },
+  { groupName: 'Group G', home: 'Iran', away: 'New Zealand', kickoff: '2026-06-16T01:00:00Z' },
+  { groupName: 'Group G', home: 'Belgium', away: 'Iran', kickoff: '2026-06-21T19:00:00Z' },
+  { groupName: 'Group G', home: 'New Zealand', away: 'Egypt', kickoff: '2026-06-22T01:00:00Z' },
+  { groupName: 'Group G', home: 'New Zealand', away: 'Belgium', kickoff: '2026-06-27T18:00:00Z' },
+  { groupName: 'Group G', home: 'Egypt', away: 'Iran', kickoff: '2026-06-27T18:00:00Z' },
+  // Group H
+  { groupName: 'Group H', home: 'Spain', away: 'Cabo Verde', kickoff: '2026-06-15T16:00:00Z' },
+  { groupName: 'Group H', home: 'Saudi Arabia', away: 'Uruguay', kickoff: '2026-06-15T22:00:00Z' },
+  { groupName: 'Group H', home: 'Spain', away: 'Saudi Arabia', kickoff: '2026-06-21T16:00:00Z' },
+  { groupName: 'Group H', home: 'Uruguay', away: 'Cabo Verde', kickoff: '2026-06-21T22:00:00Z' },
+  { groupName: 'Group H', home: 'Cabo Verde', away: 'Saudi Arabia', kickoff: '2026-06-27T20:00:00Z' },
+  { groupName: 'Group H', home: 'Uruguay', away: 'Spain', kickoff: '2026-06-27T20:00:00Z' },
+  // Group I
+  { groupName: 'Group I', home: 'France', away: 'Senegal', kickoff: '2026-06-16T19:00:00Z' },
+  { groupName: 'Group I', home: 'Iraq', away: 'Norway', kickoff: '2026-06-16T22:00:00Z' },
+  { groupName: 'Group I', home: 'Norway', away: 'Senegal', kickoff: '2026-06-22T00:00:00Z' },
+  { groupName: 'Group I', home: 'France', away: 'Iraq', kickoff: '2026-06-22T21:00:00Z' },
+  { groupName: 'Group I', home: 'Norway', away: 'France', kickoff: '2026-06-26T22:00:00Z' },
+  { groupName: 'Group I', home: 'Senegal', away: 'Iraq', kickoff: '2026-06-26T22:00:00Z' },
+  // Group J
+  { groupName: 'Group J', home: 'Argentina', away: 'Algeria', kickoff: '2026-06-17T01:00:00Z' },
+  { groupName: 'Group J', home: 'Austria', away: 'Jordan', kickoff: '2026-06-17T04:00:00Z' },
+  { groupName: 'Group J', home: 'Argentina', away: 'Austria', kickoff: '2026-06-22T17:00:00Z' },
+  { groupName: 'Group J', home: 'Jordan', away: 'Algeria', kickoff: '2026-06-23T03:00:00Z' },
+  { groupName: 'Group J', home: 'Algeria', away: 'Austria', kickoff: '2026-06-28T18:00:00Z' },
+  { groupName: 'Group J', home: 'Jordan', away: 'Argentina', kickoff: '2026-06-28T18:00:00Z' },
+  // Group K
+  { groupName: 'Group K', home: 'Portugal', away: 'DR Congo', kickoff: '2026-06-17T17:00:00Z' },
+  { groupName: 'Group K', home: 'Uzbekistan', away: 'Colombia', kickoff: '2026-06-18T02:00:00Z' },
+  { groupName: 'Group K', home: 'Portugal', away: 'Uzbekistan', kickoff: '2026-06-23T17:00:00Z' },
+  { groupName: 'Group K', home: 'Colombia', away: 'DR Congo', kickoff: '2026-06-24T02:00:00Z' },
+  { groupName: 'Group K', home: 'Colombia', away: 'Portugal', kickoff: '2026-06-28T22:30:00Z' },
+  { groupName: 'Group K', home: 'DR Congo', away: 'Uzbekistan', kickoff: '2026-06-28T22:30:00Z' },
+  // Group L
+  { groupName: 'Group L', home: 'Ghana', away: 'Panama', kickoff: '2026-06-16T23:00:00Z' },
+  { groupName: 'Group L', home: 'England', away: 'Croatia', kickoff: '2026-06-17T20:00:00Z' },
+  { groupName: 'Group L', home: 'England', away: 'Ghana', kickoff: '2026-06-23T20:00:00Z' },
+  { groupName: 'Group L', home: 'Panama', away: 'Croatia', kickoff: '2026-06-22T23:00:00Z' },
+  { groupName: 'Group L', home: 'Panama', away: 'England', kickoff: '2026-06-27T01:00:00Z' },
+  { groupName: 'Group L', home: 'Croatia', away: 'Ghana', kickoff: '2026-06-27T01:00:00Z' },
+];
 
 function groupNumToLetter(groupNum: string): string {
   const m = groupNum.match(/(\d+)/);
@@ -39,114 +133,123 @@ function toFlagUrl(code: string): string {
   return `/flags/${code.toLowerCase()}.png`;
 }
 
-function matchId(match: any): string {
-  const slug = (match.url || `${match.home}-${match.away}`).replace(/[^a-zA-Z0-9-]/g, '_');
-  return `ss_${slug}`;
-}
-
-export async function syncAllFixtures() {
-  console.log('[sync] Starting full fixture sync from SportScore...');
-
-  const standingsData = await getFifaStandings() as any;
-  if (!standingsData?.tables) {
-    console.log('[sync] No standings data available');
-    return;
-  }
-
-  const teamGroupMap: Record<string, string> = {};
-  for (const table of standingsData.tables) {
-    const groupName = groupNumToLetter(table.group);
-    for (const row of table.rows) {
-      teamGroupMap[row.team] = groupName;
-    }
-  }
-
-  for (const [, groupName] of Object.entries(teamGroupMap)) {
-    for (const [teamName, code] of Object.entries(TEAM_CODE_MAP)) {
-      if (teamGroupMap[teamName] === groupName) {
-        await prisma.team.upsert({
-          where: { code },
-          update: { name: teamName, groupName, flagUrl: toFlagUrl(code) },
-          create: { code, name: teamName, groupName, flagUrl: toFlagUrl(code) },
-        });
-      }
-    }
-  }
-
-  console.log(`[sync] Synced ${Object.keys(teamGroupMap).length} teams across ${standingsData.tables.length} groups`);
-
-  const matchesData = await getAllMatches() as any;
-  if (!matchesData?.matches) {
-    console.log('[sync] No matches data available');
-    return;
-  }
-
-  const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
-  console.log(`[sync] Found ${wcMatches.length} FIFA World Cup matches`);
-
-  for (const match of wcMatches) {
-    await upsertMatch(match, teamGroupMap);
-  }
-
-  const scored = await processFinishedMatches();
-  console.log(`[sync] Sync complete: ${wcMatches.length} matches, ${scored} predictions scored`);
-}
-
-async function upsertMatch(match: any, teamGroupMap: Record<string, string>) {
-  const homeName = match.home;
-  const awayName = match.away;
-  const homeCode = toCode(homeName);
-  const awayCode = toCode(awayName);
-  const groupName = teamGroupMap[homeName] || teamGroupMap[awayName] || 'Group A';
-
-  for (const [name, code] of [[homeName, homeCode], [awayName, awayCode]] as [string, string][]) {
-    await prisma.team.upsert({
-      where: { code },
-      update: { name, groupName, flagUrl: toFlagUrl(code) },
-      create: { code, name, groupName, flagUrl: toFlagUrl(code) },
-    });
-  }
-
-  const kickoffTime = new Date(match.time);
-  const id = matchId(match);
-
-  const isFinished = match.status === 'finished';
-  const isLive = match.status === 'live' || match.status === 'inprogress';
-
-  let status = 'scheduled';
-  if (isLive) status = 'live';
-  else if (isFinished) status = 'finished';
-
-  const fixtureData: Record<string, unknown> = {
-    groupName,
-    teamACode: homeCode,
-    teamBCode: awayCode,
-    kickoffTime,
-    isClosed: isFinished,
-    status,
-  };
-
-  if (match.home_score != null && match.away_score != null) {
-    fixtureData.liveScoreA = match.home_score;
-    fixtureData.liveScoreB = match.away_score;
-    if (isFinished) {
-      fixtureData.actualScoreA = match.home_score;
-      fixtureData.actualScoreB = match.away_score;
-    }
-  }
-
-  await prisma.fixture.upsert({
-    where: { id },
-    update: fixtureData as any,
-    create: { id, ...fixtureData } as any,
+async function findFixtureByTeams(homeCode: string, awayCode: string) {
+  return prisma.fixture.findFirst({
+    where: { teamACode: homeCode, teamBCode: awayCode },
   });
 }
 
+async function upsertHardcodedFixture(fx: FixtureSeed, index: number) {
+  const homeCode = toCode(fx.home);
+  const awayCode = toCode(fx.away);
+  const id = `ff_${fx.groupName.replace('Group ', '')}_${index}`;
+
+  await prisma.fixture.upsert({
+    where: { id },
+    update: {
+      teamACode: homeCode,
+      teamBCode: awayCode,
+      groupName: fx.groupName,
+      kickoffTime: new Date(fx.kickoff),
+    },
+    create: {
+      id,
+      groupName: fx.groupName,
+      teamACode: homeCode,
+      teamBCode: awayCode,
+      kickoffTime: new Date(fx.kickoff),
+      isClosed: false,
+      status: 'scheduled',
+    },
+  });
+}
+
+async function overlaySportScoreScore(match: any) {
+  const homeCode = toCode(match.home);
+  const awayCode = toCode(match.away);
+  const existing = await findFixtureByTeams(homeCode, awayCode);
+  if (!existing) return;
+
+  const updates: Record<string, unknown> = {};
+
+  if (match.home_score != null && match.away_score != null) {
+    updates.liveScoreA = match.home_score;
+    updates.liveScoreB = match.away_score;
+  }
+
+  if (match.status === 'finished') {
+    updates.isClosed = true;
+    updates.status = 'finished';
+    if (match.home_score != null && match.away_score != null) {
+      updates.actualScoreA = match.home_score;
+      updates.actualScoreB = match.away_score;
+    }
+  } else if (match.status === 'live' || match.status === 'inprogress') {
+    updates.status = 'live';
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await prisma.fixture.update({ where: { id: existing.id }, data: updates as any });
+  }
+}
+
+export async function syncAllFixtures() {
+  console.log('[sync] Starting full fixture sync...');
+
+  const standingsData = await getFifaStandings() as any;
+  if (standingsData?.tables) {
+    const teamGroupMap: Record<string, string> = {};
+    for (const table of standingsData.tables) {
+      if (table.group === 'Ranking of third placed teams') continue;
+      const groupName = groupNumToLetter(table.group);
+      for (const row of table.rows) {
+        teamGroupMap[row.team] = groupName;
+      }
+    }
+
+    for (const [, groupName] of Object.entries(teamGroupMap)) {
+      for (const [teamName, code] of Object.entries(TEAM_CODE_MAP)) {
+        if (teamGroupMap[teamName] === groupName) {
+          await prisma.team.upsert({
+            where: { code },
+            update: { name: teamName, groupName, flagUrl: toFlagUrl(code) },
+            create: { code, name: teamName, groupName, flagUrl: toFlagUrl(code) },
+          });
+        }
+      }
+    }
+
+    console.log(`[sync] Synced ${Object.keys(teamGroupMap).length} teams from standings`);
+  } else {
+    console.log('[sync] No standings data, skipping team sync');
+  }
+
+  let synced = 0;
+  for (let i = 0; i < GROUP_FIXTURES.length; i++) {
+    await upsertHardcodedFixture(GROUP_FIXTURES[i], i + 1);
+    synced++;
+  }
+  console.log(`[sync] Upserted ${synced} hardcoded group stage fixtures`);
+
+  const matchesData = await getAllMatches() as any;
+  if (matchesData?.matches) {
+    const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
+    console.log(`[sync] Overlaying scores from ${wcMatches.length} SportScore matches`);
+
+    for (const match of wcMatches) {
+      await overlaySportScoreScore(match);
+    }
+  }
+
+  const scored = await processFinishedMatches();
+  console.log(`[sync] Sync complete: ${synced} fixtures, ${scored} predictions scored`);
+}
+
 export async function clearOldData() {
-  console.log('[sync] Clearing old data...');
+  console.log('[sync] Clearing old sportapi7 data...');
   await prisma.prediction.deleteMany({ where: { fixture: { id: { startsWith: 'ext_' } } } });
   await prisma.fixture.deleteMany({ where: { id: { startsWith: 'ext_' } } });
-  console.log('[sync] Old sportapi7 data cleared');
+  console.log('[sync] Old data cleared');
 }
 
 export async function processFinishedMatches() {
@@ -178,31 +281,7 @@ export async function syncLiveScores() {
   const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
 
   for (const match of wcMatches) {
-    const id = matchId(match);
-    const existing = await prisma.fixture.findUnique({ where: { id } });
-    if (!existing) continue;
-
-    const updates: Record<string, unknown> = {};
-
-    if (match.home_score != null && match.away_score != null) {
-      updates.liveScoreA = match.home_score;
-      updates.liveScoreB = match.away_score;
-    }
-
-    if (match.status === 'finished') {
-      updates.isClosed = true;
-      updates.status = 'finished';
-      if (match.home_score != null && match.away_score != null) {
-        updates.actualScoreA = match.home_score;
-        updates.actualScoreB = match.away_score;
-      }
-    } else if (match.status === 'live' || match.status === 'inprogress') {
-      updates.status = 'live';
-    }
-
-    if (Object.keys(updates).length > 0) {
-      await prisma.fixture.update({ where: { id }, data: updates as any });
-    }
+    await overlaySportScoreScore(match);
   }
 
   const scored = await processFinishedMatches();
