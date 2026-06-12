@@ -325,8 +325,41 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
                         </div>
                       </div>
                       {isPast ? (
-                        <div className="text-center text-zinc-500 text-xs font-bold">
-                          {f.actualScoreA != null ? `${f.actualScoreA} - ${f.actualScoreB}` : 'Match started'}
+                        <div className="space-y-2">
+                          {f.predictions?.[0] ? (
+                            <div className="flex items-center justify-center gap-3">
+                              <div className="text-center">
+                                <div className="font-mono text-sm font-black text-zinc-400 bg-zinc-900 px-2.5 py-1 rounded border border-zinc-800">
+                                  <span>{f.predictions[0].scoreA ?? '?'}</span>
+                                  <span className="mx-0.5 text-zinc-600">-</span>
+                                  <span>{f.predictions[0].scoreB ?? '?'}</span>
+                                </div>
+                                <span className="text-[9px] font-bold text-zinc-600 mt-0.5 block uppercase">Your Guess</span>
+                              </div>
+                              <div className="text-center">
+                                <div className="font-mono text-sm font-black text-white bg-zinc-900 px-2.5 py-1 rounded border border-zinc-700">
+                                  <span>{f.actualScoreA ?? '-'}</span>
+                                  <span className="mx-0.5 text-zinc-600">-</span>
+                                  <span>{f.actualScoreB ?? '-'}</span>
+                                </div>
+                                <span className="text-[9px] font-bold text-zinc-400 mt-0.5 block uppercase">Result</span>
+                              </div>
+                              {f.predictions[0].status !== 'OPEN' && (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${f.predictions[0].status === 'CORRECT' ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/50' : 'bg-red-950/40 text-red-400 border border-red-800/50'}`}>
+                                    {f.predictions[0].status === 'CORRECT' ? 'Correct' : 'Incorrect'}
+                                  </span>
+                                  <span className="text-[10px] font-mono font-black text-zinc-400">
+                                    {f.predictions[0].status === 'CORRECT' ? `+${f.predictions[0].pointsEarned || 15} pts` : '0 pts'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center text-zinc-500 text-xs font-bold">
+                              {f.actualScoreA != null ? `${f.actualScoreA} - ${f.actualScoreB}` : f.status === 'finished' ? 'Match ended' : f.status === 'live' ? 'Match in progress' : 'Match started'}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div>

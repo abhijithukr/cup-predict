@@ -279,6 +279,11 @@ export default function ProfileView({ user }: ProfileViewProps) {
                     <span className="text-[10px] uppercase font-mono font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100">
                       {pred.group}
                     </span>
+                    {pred.status !== 'OPEN' && (
+                      <span className="text-[9px] uppercase font-mono font-extrabold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 mt-1">
+                        Match ended
+                      </span>
+                    )}
                     <span className="text-xs text-gray-500 font-semibold mt-1 flex items-center gap-1">
                       <Calendar size={12} />
                       {pred.dateLabel}
@@ -336,7 +341,7 @@ export default function ProfileView({ user }: ProfileViewProps) {
                       {isCorrect ? 'Correct' : pred.status === 'OPEN' ? 'Pending' : 'Incorrect'}
                     </span>
                     <span className="text-xs font-mono font-black text-gray-700">
-                      {isCorrect ? `+${pred.pointsEarned || 150} pts` : '0 pts'}
+                      {isCorrect ? `+${pred.pointsEarned || 15} pts` : '0 pts'}
                     </span>
                   </div>
                 </div>

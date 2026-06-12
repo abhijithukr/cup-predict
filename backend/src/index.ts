@@ -42,28 +42,24 @@ app.use((_req, res) => {
 app.listen(config.port, async () => {
   console.log(`CupPredict API running on port ${config.port}`);
 
-  if (config.rapidApiKey) {
-    try {
-      await clearOldData();
-      await syncAllFixtures();
-      console.log('[cron] Initial sync complete');
-    } catch (err) {
-      console.error('[cron] Initial sync failed:', err);
-    }
-
-    cron.schedule('*/15 * * * *', async () => {
-      console.log('[cron] Checking live scores...');
-      try {
-        await syncLiveScores();
-        const scored = await processFinishedMatches();
-        if (scored > 0) console.log(`[cron] Scored ${scored} predictions`);
-      } catch (err) {
-        console.error('[cron] Live sync error:', err);
-      }
-    });
-  } else {
-    console.log('[cron] RAPIDAPI_KEY not set, skipping sync');
+  try {
+    await clearOldData();
+    await syncAllFixtures();
+    console.log('[cron] Initial sync complete');
+  } catch (err) {
+    console.error('[cron] Initial sync failed:', err);
   }
+
+  cron.schedule('*/5 * * * *', async () => {
+    console.log('[cron] Checking live scores...');
+    try {
+      await syncLiveScores();
+      const scored = await processFinishedMatches();
+      if (scored > 0) console.log(`[cron] Scored ${scored} predictions`);
+    } catch (err) {
+      console.error('[cron] Live sync error:', err);
+    }
+  });
 });
 
 process.on('SIGTERM', async () => {

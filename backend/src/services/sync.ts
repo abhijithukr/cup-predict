@@ -1,9 +1,7 @@
 import { prisma } from '../lib/prisma';
-import { getRoundEvents, getScheduledEvents, getLiveEvents } from './api-client';
+import { getAllMatches, getFifaStandings } from './api-client';
 import { scoreFixture } from './scoring';
 import { computeAllGroupStandings } from './groupStandings';
-
-const ROUNDS = [1, 2, 3];
 
 const TEAM_CODE_MAP: Record<string, string> = {
   'Mexico': 'MEX', 'South Africa': 'RSA', 'South Korea': 'KOR', 'Czechia': 'CZE',
@@ -14,17 +12,23 @@ const TEAM_CODE_MAP: Record<string, string> = {
   "C\u00f4te d'Ivoire": 'CIV', 'Cote d\'Ivoire': 'CIV', 'Ivory Coast': 'CIV',
   'Ecuador': 'ECU',
   'Netherlands': 'NED', 'Japan': 'JPN', 'Sweden': 'SWE', 'Tunisia': 'TUN',
-  'Belgium': 'BEL', 'Egypt': 'EGY', 'Iran': 'IRN', 'New Zealand': 'NZL',
+  'Belgium': 'BEL', 'Egypt': 'EGY', 'IR Iran': 'IRN', 'Iran': 'IRN', 'New Zealand': 'NZL',
   'Spain': 'ESP', 'Cabo Verde': 'CPV', 'Saudi Arabia': 'KSA', 'Uruguay': 'URU',
   'France': 'FRA', 'Senegal': 'SEN', 'Iraq': 'IRQ', 'Norway': 'NOR',
   'Argentina': 'ARG', 'Algeria': 'ALG', 'Austria': 'AUT', 'Jordan': 'JOR',
-  'Portugal': 'POR', 'DR Congo': 'COD', 'Uzbekistan': 'UZB', 'Colombia': 'COL',
+  'Portugal': 'POR', 'Democratic Republic of the Congo': 'COD', 'DR Congo': 'COD',
+  'Uzbekistan': 'UZB', 'Colombia': 'COL',
   'England': 'ENG', 'Croatia': 'CRO', 'Ghana': 'GHA', 'Panama': 'PAN',
+  'Bosnia and Herzegovina': 'BIH',
 };
 
-function extractGroup(name: string): string {
-  const m = name.match(/Group\s+([A-Z])/);
-  return m ? `Group ${m[1]}` : 'Group A';
+function groupNumToLetter(groupNum: string): string {
+  const m = groupNum.match(/(\d+)/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n >= 1 && n <= 26) return `Group ${String.fromCharCode(64 + n)}`;
+  }
+  return 'Group A';
 }
 
 function toCode(name: string): string {
@@ -35,43 +39,67 @@ function toFlagUrl(code: string): string {
   return `/flags/${code.toLowerCase()}.png`;
 }
 
+function matchId(match: any): string {
+  const slug = (match.url || `${match.home}-${match.away}`).replace(/[^a-zA-Z0-9-]/g, '_');
+  return `ss_${slug}`;
+}
+
 export async function syncAllFixtures() {
-  console.log('[sync] Starting full fixture sync...');
+  console.log('[sync] Starting full fixture sync from SportScore...');
 
-  const seenEventIds = new Set<number>();
+  const standingsData = await getFifaStandings() as any;
+  if (!standingsData?.tables) {
+    console.log('[sync] No standings data available');
+    return;
+  }
 
-  for (const round of ROUNDS) {
-    const data = await getRoundEvents(round);
-    if (!data?.events) {
-      console.log(`[sync] No data for round ${round}`);
-      continue;
+  const teamGroupMap: Record<string, string> = {};
+  for (const table of standingsData.tables) {
+    const groupName = groupNumToLetter(table.group);
+    for (const row of table.rows) {
+      teamGroupMap[row.team] = groupName;
     }
-    for (const ev of data.events) {
-      await upsertEvent(ev);
-      seenEventIds.add(ev.id);
+  }
+
+  for (const [, groupName] of Object.entries(teamGroupMap)) {
+    for (const [teamName, code] of Object.entries(TEAM_CODE_MAP)) {
+      if (teamGroupMap[teamName] === groupName) {
+        await prisma.team.upsert({
+          where: { code },
+          update: { name: teamName, groupName, flagUrl: toFlagUrl(code) },
+          create: { code, name: teamName, groupName, flagUrl: toFlagUrl(code) },
+        });
+      }
     }
-    console.log(`[sync] Round ${round}: ${data.events.length} events processed`);
+  }
+
+  console.log(`[sync] Synced ${Object.keys(teamGroupMap).length} teams across ${standingsData.tables.length} groups`);
+
+  const matchesData = await getAllMatches() as any;
+  if (!matchesData?.matches) {
+    console.log('[sync] No matches data available');
+    return;
+  }
+
+  const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
+  console.log(`[sync] Found ${wcMatches.length} FIFA World Cup matches`);
+
+  for (const match of wcMatches) {
+    await upsertMatch(match, teamGroupMap);
   }
 
   const scored = await processFinishedMatches();
-  console.log(`[sync] Sync complete: ${seenEventIds.size} events, ${scored} predictions scored`);
+  console.log(`[sync] Sync complete: ${wcMatches.length} matches, ${scored} predictions scored`);
 }
 
-async function upsertEvent(ev: {
-  id: number;
-  homeTeam: { name: string };
-  awayTeam: { name: string };
-  startTimestamp: number;
-  status: { code: number; type: string };
-  homeScore: { current: number | null };
-  awayScore: { current: number | null };
-  tournament: { name: string };
-}) {
-  const homeCode = toCode(ev.homeTeam.name);
-  const awayCode = toCode(ev.awayTeam.name);
-  const groupName = extractGroup(ev.tournament.name);
+async function upsertMatch(match: any, teamGroupMap: Record<string, string>) {
+  const homeName = match.home;
+  const awayName = match.away;
+  const homeCode = toCode(homeName);
+  const awayCode = toCode(awayName);
+  const groupName = teamGroupMap[homeName] || teamGroupMap[awayName] || 'Group A';
 
-  for (const [name, code] of [[ev.homeTeam.name, homeCode], [ev.awayTeam.name, awayCode]]) {
+  for (const [name, code] of [[homeName, homeCode], [awayName, awayCode]] as [string, string][]) {
     await prisma.team.upsert({
       where: { code },
       update: { name, groupName, flagUrl: toFlagUrl(code) },
@@ -79,10 +107,11 @@ async function upsertEvent(ev: {
     });
   }
 
-  const kickoffTime = new Date(ev.startTimestamp * 1000);
-  const isFinished = ev.status.code === 100;
-  const isLive = ev.status.type === 'inprogress';
-  const fixtureId = `ext_${ev.id}`;
+  const kickoffTime = new Date(match.time);
+  const id = matchId(match);
+
+  const isFinished = match.status === 'finished';
+  const isLive = match.status === 'live' || match.status === 'inprogress';
 
   let status = 'scheduled';
   if (isLive) status = 'live';
@@ -97,27 +126,27 @@ async function upsertEvent(ev: {
     status,
   };
 
-  if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
-    fixtureData.liveScoreA = ev.homeScore.current;
-    fixtureData.liveScoreB = ev.awayScore.current;
+  if (match.home_score != null && match.away_score != null) {
+    fixtureData.liveScoreA = match.home_score;
+    fixtureData.liveScoreB = match.away_score;
     if (isFinished) {
-      fixtureData.actualScoreA = ev.homeScore.current;
-      fixtureData.actualScoreB = ev.awayScore.current;
+      fixtureData.actualScoreA = match.home_score;
+      fixtureData.actualScoreB = match.away_score;
     }
   }
 
   await prisma.fixture.upsert({
-    where: { id: fixtureId },
+    where: { id },
     update: fixtureData as any,
-    create: { id: fixtureId, ...fixtureData } as any,
+    create: { id, ...fixtureData } as any,
   });
 }
 
 export async function clearOldData() {
-  console.log('[sync] Clearing old fixture data...');
-  await prisma.prediction.deleteMany({ where: { fixture: { id: { not: { startsWith: 'ext_' } } } } });
-  await prisma.fixture.deleteMany({ where: { id: { not: { startsWith: 'ext_' } } } });
-  console.log('[sync] Old data cleared');
+  console.log('[sync] Clearing old data...');
+  await prisma.prediction.deleteMany({ where: { fixture: { id: { startsWith: 'ext_' } } } });
+  await prisma.fixture.deleteMany({ where: { id: { startsWith: 'ext_' } } });
+  console.log('[sync] Old sportapi7 data cleared');
 }
 
 export async function processFinishedMatches() {
@@ -143,62 +172,39 @@ export async function processFinishedMatches() {
 }
 
 export async function syncLiveScores() {
-  const today = new Date().toISOString().split('T')[0];
+  const matchesData = await getAllMatches() as any;
+  if (!matchesData?.matches) return;
 
-  const data = await getScheduledEvents(today);
-  if (data?.events) {
-    for (const ev of data.events) {
-      const fixtureId = `ext_${ev.id}`;
-      const existing = await prisma.fixture.findUnique({ where: { id: fixtureId } });
-      if (!existing) continue;
+  const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
 
-      const updates: Record<string, unknown> = {};
+  for (const match of wcMatches) {
+    const id = matchId(match);
+    const existing = await prisma.fixture.findUnique({ where: { id } });
+    if (!existing) continue;
 
-      if (ev.status.code === 100) {
-        updates.isClosed = true;
-        updates.status = 'finished';
-        if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
-          updates.actualScoreA = ev.homeScore.current;
-          updates.actualScoreB = ev.awayScore.current;
-          updates.liveScoreA = ev.homeScore.current;
-          updates.liveScoreB = ev.awayScore.current;
-        }
+    const updates: Record<string, unknown> = {};
+
+    if (match.home_score != null && match.away_score != null) {
+      updates.liveScoreA = match.home_score;
+      updates.liveScoreB = match.away_score;
+    }
+
+    if (match.status === 'finished') {
+      updates.isClosed = true;
+      updates.status = 'finished';
+      if (match.home_score != null && match.away_score != null) {
+        updates.actualScoreA = match.home_score;
+        updates.actualScoreB = match.away_score;
       }
+    } else if (match.status === 'live' || match.status === 'inprogress') {
+      updates.status = 'live';
+    }
 
-      if (Object.keys(updates).length > 0) {
-        await prisma.fixture.update({ where: { id: fixtureId }, data: updates as any });
-      }
+    if (Object.keys(updates).length > 0) {
+      await prisma.fixture.update({ where: { id }, data: updates as any });
     }
   }
 
-  const liveData = await getLiveEvents();
-  if (liveData?.events) {
-    for (const ev of liveData.events) {
-      const fixtureId = `ext_${ev.id}`;
-      const existing = await prisma.fixture.findUnique({ where: { id: fixtureId } });
-      if (!existing) continue;
-
-      const updates: Record<string, unknown> = {};
-
-      if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
-        updates.liveScoreA = ev.homeScore.current;
-        updates.liveScoreB = ev.awayScore.current;
-      }
-
-      if (ev.status.type === 'inprogress') {
-        updates.status = 'live';
-      } else if (ev.status.type === 'finished' || ev.status.code === 100) {
-        updates.isClosed = true;
-        updates.status = 'finished';
-        if (ev.homeScore?.current != null && ev.awayScore?.current != null) {
-          updates.actualScoreA = ev.homeScore.current;
-          updates.actualScoreB = ev.awayScore.current;
-        }
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await prisma.fixture.update({ where: { id: fixtureId }, data: updates as any });
-      }
-    }
-  }
+  const scored = await processFinishedMatches();
+  if (scored > 0) console.log(`[sync] Live sync scored ${scored} predictions`);
 }
