@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { getAllMatches, getFifaStandings } from './api-client';
+import { getAllMatches, getFifaStandings, getMatchDetail } from './api-client';
 import { scoreFixture } from './scoring';
 import { computeAllGroupStandings } from './groupStandings';
 
@@ -133,6 +133,17 @@ function toFlagUrl(code: string): string {
   return `/flags/${code.toLowerCase()}.png`;
 }
 
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+async function fetchAndOverlayIndividualMatch(homeName: string, awayName: string) {
+  const slug = `${slugify(homeName)}-vs-${slugify(awayName)}`;
+  const data = await getMatchDetail(slug) as any;
+  if (!data?.match) return;
+  await overlaySportScoreScore(data.match);
+}
+
 async function findFixtureByTeams(homeCode: string, awayCode: string) {
   return prisma.fixture.findFirst({
     where: { teamACode: homeCode, teamBCode: awayCode },
@@ -241,6 +252,13 @@ export async function syncAllFixtures() {
     }
   }
 
+  const now = new Date();
+  for (const fx of GROUP_FIXTURES) {
+    if (new Date(fx.kickoff) <= now) {
+      await fetchAndOverlayIndividualMatch(fx.home, fx.away);
+    }
+  }
+
   const scored = await processFinishedMatches();
   console.log(`[sync] Sync complete: ${synced} fixtures, ${scored} predictions scored`);
 }
@@ -276,12 +294,27 @@ export async function processFinishedMatches() {
 
 export async function syncLiveScores() {
   const matchesData = await getAllMatches() as any;
-  if (!matchesData?.matches) return;
+  if (matchesData?.matches) {
+    const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
+    for (const match of wcMatches) {
+      await overlaySportScoreScore(match);
+    }
+  }
 
-  const wcMatches = matchesData.matches.filter((m: any) => m.competition === 'FIFA World Cup');
+  const pastUnscored = await prisma.fixture.findMany({
+    where: { kickoffTime: { lte: new Date() }, actualScoreA: null, id: { startsWith: 'ff_' } },
+    take: 5,
+  });
 
-  for (const match of wcMatches) {
-    await overlaySportScoreScore(match);
+  for (const fx of pastUnscored) {
+    const seed = GROUP_FIXTURES.find((g) => {
+      const homeCode = toCode(g.home);
+      const awayCode = toCode(g.away);
+      return homeCode === fx.teamACode && awayCode === fx.teamBCode;
+    });
+    if (seed) {
+      await fetchAndOverlayIndividualMatch(seed.home, seed.away);
+    }
   }
 
   const scored = await processFinishedMatches();

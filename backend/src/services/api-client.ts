@@ -21,3 +21,7 @@ export async function getAllMatches() {
 export async function getFifaStandings() {
   return fetchFromSportScore('/api/widget/standings/?sport=football&slug=fifa-world-cup');
 }
+
+export async function getMatchDetail(slug: string) {
+  return fetchFromSportScore(`/api/widget/match/?sport=football&slug=${slug}`);
+}
