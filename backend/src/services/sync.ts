@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { getAllMatches, getFifaStandings, getMatchDetail } from './api-client';
+import { getAllMatches, getFifaStandings, getTeamMatches } from './api-client';
 import { scoreFixture } from './scoring';
 import { computeAllGroupStandings } from './groupStandings';
 
@@ -133,19 +133,12 @@ function toFlagUrl(code: string): string {
   return `/flags/${code.toLowerCase()}.png`;
 }
 
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
-async function fetchAndOverlayIndividualMatch(homeName: string, awayName: string) {
-  const a = slugify(homeName);
-  const b = slugify(awayName);
-  for (const slug of [`${a}-vs-${b}`, `${b}-vs-${a}`]) {
-    const data = await getMatchDetail(slug) as any;
-    if (data?.match) {
-      await overlaySportScoreScore(data.match);
-      return;
-    }
+async function fetchAndOverlayTeamMatches(teamSlug: string) {
+  const data = await getTeamMatches(teamSlug) as any;
+  if (!data?.matches) return;
+  const wcMatches = data.matches.filter((m: any) => m.competition === 'FIFA World Cup');
+  for (const match of wcMatches) {
+    await overlaySportScoreScore(match);
   }
 }
 
@@ -257,10 +250,17 @@ export async function syncAllFixtures() {
     }
   }
 
-  const now = new Date();
-  for (const fx of GROUP_FIXTURES) {
-    if (new Date(fx.kickoff) <= now) {
-      await fetchAndOverlayIndividualMatch(fx.home, fx.away);
+  if (standingsData?.tables) {
+    const teamSlugs = new Set<string>();
+    for (const table of standingsData.tables) {
+      if (table.group === 'Ranking of third placed teams') continue;
+      for (const row of table.rows) {
+        if (row.team_slug) teamSlugs.add(row.team_slug);
+      }
+    }
+    console.log(`[sync] Fetching team data for ${teamSlugs.size} SportScore teams...`);
+    for (const slug of teamSlugs) {
+      await fetchAndOverlayTeamMatches(slug);
     }
   }
 
@@ -308,20 +308,32 @@ export async function syncLiveScores() {
     }
   }
 
+  const standingsData = await getFifaStandings() as any;
+  if (!standingsData?.tables) return;
+
+  const teamCodeToSlug: Record<string, string> = {};
+  for (const table of standingsData.tables) {
+    if (table.group === 'Ranking of third placed teams') continue;
+    for (const row of table.rows) {
+      const code = TEAM_CODE_MAP[row.team] || row.team.substring(0, 3).toUpperCase();
+      teamCodeToSlug[code] = row.team_slug;
+    }
+  }
+
   const pastUnscored = await prisma.fixture.findMany({
     where: { kickoffTime: { lte: new Date() }, actualScoreA: null, id: { startsWith: 'ff_' } },
+    select: { teamACode: true, teamBCode: true },
     take: 5,
   });
 
+  const neededSlugs = new Set<string>();
   for (const fx of pastUnscored) {
-    const seed = GROUP_FIXTURES.find((g) => {
-      const homeCode = toCode(g.home);
-      const awayCode = toCode(g.away);
-      return homeCode === fx.teamACode && awayCode === fx.teamBCode;
-    });
-    if (seed) {
-      await fetchAndOverlayIndividualMatch(seed.home, seed.away);
-    }
+    if (teamCodeToSlug[fx.teamACode]) neededSlugs.add(teamCodeToSlug[fx.teamACode]);
+    if (teamCodeToSlug[fx.teamBCode]) neededSlugs.add(teamCodeToSlug[fx.teamBCode]);
+  }
+
+  for (const slug of neededSlugs) {
+    await fetchAndOverlayTeamMatches(slug);
   }
 
   const scored = await processFinishedMatches();

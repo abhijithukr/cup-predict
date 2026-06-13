@@ -25,3 +25,7 @@ export async function getFifaStandings() {
 export async function getMatchDetail(slug: string) {
   return fetchFromSportScore(`/api/widget/match/?sport=football&slug=${slug}`);
 }
+
+export async function getTeamMatches(teamSlug: string) {
+  return fetchFromSportScore(`/api/widget/team/?sport=football&slug=${teamSlug}&limit=10`);
+}
