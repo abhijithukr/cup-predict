@@ -138,10 +138,15 @@ function slugify(name: string): string {
 }
 
 async function fetchAndOverlayIndividualMatch(homeName: string, awayName: string) {
-  const slug = `${slugify(homeName)}-vs-${slugify(awayName)}`;
-  const data = await getMatchDetail(slug) as any;
-  if (!data?.match) return;
-  await overlaySportScoreScore(data.match);
+  const a = slugify(homeName);
+  const b = slugify(awayName);
+  for (const slug of [`${a}-vs-${b}`, `${b}-vs-${a}`]) {
+    const data = await getMatchDetail(slug) as any;
+    if (data?.match) {
+      await overlaySportScoreScore(data.match);
+      return;
+    }
+  }
 }
 
 async function findFixtureByTeams(homeCode: string, awayCode: string) {
@@ -264,9 +269,11 @@ export async function syncAllFixtures() {
 }
 
 export async function clearOldData() {
-  console.log('[sync] Clearing old sportapi7 data...');
+  console.log('[sync] Clearing old fixture data...');
   await prisma.prediction.deleteMany({ where: { fixture: { id: { startsWith: 'ext_' } } } });
   await prisma.fixture.deleteMany({ where: { id: { startsWith: 'ext_' } } });
+  await prisma.prediction.deleteMany({ where: { fixture: { id: { startsWith: 'ss_' } } } });
+  await prisma.fixture.deleteMany({ where: { id: { startsWith: 'ss_' } } });
   console.log('[sync] Old data cleared');
 }
 
