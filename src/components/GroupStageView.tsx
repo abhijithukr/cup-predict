@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Save, Info, Shield } from 'lucide-react';
+import { Check, Save, Info, Shield, Lock, Clock } from 'lucide-react';
 import { getGroupPredictions, saveGroupPredictions } from '../api';
 
 const FIFA_TO_ISO: Record<string, string> = {
@@ -36,6 +36,9 @@ export default function GroupStageView() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const DEADLINE = new Date('2026-06-17T18:30:00Z');
+  const isClosed = new Date() > DEADLINE;
+
   useEffect(() => {
     (async () => {
       try {
@@ -46,7 +49,7 @@ export default function GroupStageView() {
           init[g.groupName] = {
             first: g.prediction?.firstCode || null,
             second: g.prediction?.secondCode || null,
-            third: null,
+            third: g.prediction?.thirdCode || null,
           };
         }
         setPicks(init);
@@ -155,15 +158,22 @@ export default function GroupStageView() {
       <header className="mb-4">
         <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">Group Stage Predictor</h1>
         <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">
-          Pick 1st and 2nd for all 12 groups, then 3rd for up to 8 groups
+          {isClosed ? 'Predictions are locked — Time Over' : 'Pick 1st and 2nd for all 12 groups, then 3rd for up to 8 groups'}
         </p>
       </header>
+
+      {isClosed && (
+        <div className="bg-red-950/40 border border-red-800 text-red-400 p-4 text-xs font-bold uppercase tracking-wider flex items-center gap-3">
+          <Clock size={18} />
+          <span>Group predictions are closed. You can view your picks below.</span>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-950/40 border border-red-800 text-red-400 p-4 text-xs font-bold uppercase tracking-wider">{error}</div>
       )}
 
-      {thirdCount > 0 && (
+      {!isClosed && thirdCount > 0 && (
         <div className="bg-zinc-900 border border-zinc-800 px-5 py-3 flex items-center gap-2">
           <Shield size={14} className="text-amber-500" />
           <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
@@ -194,32 +204,44 @@ export default function GroupStageView() {
                       <span className="flex-1 text-xs font-bold text-zinc-300 uppercase tracking-wider truncate">
                         {team.name}
                       </span>
-                      <div className="flex gap-1">
-                        {([1, 2, 3] as const).map(r => {
-                          const isActive = rank === r;
-                          const isThirdDisabled = r === 3 && thirdSlotFull;
-                          return (
-                            <button
-                              key={r}
-                              onClick={() => directRank(group.groupName, team.code, r)}
-                              disabled={isThirdDisabled}
-                              className={`w-7 h-7 text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
-                                isActive
-                                  ? r === 1
-                                    ? 'bg-yellow-500 text-black border-yellow-500'
-                                    : r === 2
-                                    ? 'bg-zinc-200 text-black border-zinc-200'
-                                    : 'bg-amber-700 text-white border-amber-700'
-                                  : isThirdDisabled
-                                  ? 'bg-zinc-800 text-zinc-600 border-zinc-700 cursor-not-allowed opacity-40'
-                                  : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
-                              }`}
-                            >
-                              {r === 1 ? '1st' : r === 2 ? '2nd' : '3rd'}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      {isClosed ? (
+                        rank && (
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 ${
+                            rank === 1 ? 'bg-yellow-500 text-black' :
+                            rank === 2 ? 'bg-zinc-200 text-black' :
+                            'bg-amber-700 text-white'
+                          }`}>
+                            {rank === 1 ? '1st' : rank === 2 ? '2nd' : '3rd'}
+                          </span>
+                        )
+                      ) : (
+                        <div className="flex gap-1">
+                          {([1, 2, 3] as const).map(r => {
+                            const isActive = rank === r;
+                            const isThirdDisabled = r === 3 && thirdSlotFull;
+                            return (
+                              <button
+                                key={r}
+                                onClick={() => directRank(group.groupName, team.code, r)}
+                                disabled={isThirdDisabled}
+                                className={`w-7 h-7 text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                                  isActive
+                                    ? r === 1
+                                      ? 'bg-yellow-500 text-black border-yellow-500'
+                                      : r === 2
+                                      ? 'bg-zinc-200 text-black border-zinc-200'
+                                      : 'bg-amber-700 text-white border-amber-700'
+                                    : isThirdDisabled
+                                    ? 'bg-zinc-800 text-zinc-600 border-zinc-700 cursor-not-allowed opacity-40'
+                                    : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
+                                }`}
+                              >
+                                {r === 1 ? '1st' : r === 2 ? '2nd' : '3rd'}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -241,23 +263,32 @@ export default function GroupStageView() {
         })}
       </div>
 
-      <footer className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-6">
-        <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold">
-          <Info size={16} />
-          <span>Click 1st/2nd/3rd badges to assign positions. Click again to remove. Max 8 third-place picks.</span>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving || !allGroupsComplete}
-          className="ml-auto min-w-[200px] bg-white hover:bg-zinc-200 text-black font-black py-3.5 px-8 transition-all text-sm cursor-pointer disabled:opacity-30 flex items-center justify-center gap-2"
-        >
-          {saving ? 'Saving...' : saved ? (
-            <><Check size={16} /> Saved!</>
-          ) : (
-            <><Save size={16} /> Save Group Predictions</>
-          )}
-        </button>
-      </footer>
+      {isClosed ? (
+        <footer className="bg-zinc-900 border border-zinc-800 p-6">
+          <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm font-bold">
+            <Lock size={16} />
+            <span>Group predictions are finalized — Time Over</span>
+          </div>
+        </footer>
+      ) : (
+        <footer className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-6">
+          <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold">
+            <Info size={16} />
+            <span>Click 1st/2nd/3rd badges to assign positions. Click again to remove. Max 8 third-place picks.</span>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving || !allGroupsComplete}
+            className="ml-auto min-w-[200px] bg-white hover:bg-zinc-200 text-black font-black py-3.5 px-8 transition-all text-sm cursor-pointer disabled:opacity-30 flex items-center justify-center gap-2"
+          >
+            {saving ? 'Saving...' : saved ? (
+              <><Check size={16} /> Saved!</>
+            ) : (
+              <><Save size={16} /> Save Group Predictions</>
+            )}
+          </button>
+        </footer>
+      )}
     </div>
   );
 }
