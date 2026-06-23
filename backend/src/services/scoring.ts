@@ -6,7 +6,31 @@ export async function scoreFixture(predictionId: string, actualScoreA: number, a
   });
   if (!pred || pred.status !== 'OPEN') return;
 
-  const correct = pred.scoreA === actualScoreA && pred.scoreB === actualScoreB;
+  const compareA = pred.scoreA === actualScoreA;
+  const compareB = pred.scoreB === actualScoreB;
+  const correct = compareA && compareB;
+
+  console.log('[scoreFixture]', JSON.stringify({
+    predictionId,
+    predId: pred.id,
+    fixtureId: pred.fixtureId,
+    predScoreA: pred.scoreA,
+    predScoreAType: typeof pred.scoreA,
+    predScoreAJSON: JSON.stringify(pred.scoreA),
+    actualScoreA,
+    actualScoreAType: typeof actualScoreA,
+    actualScoreAJSON: JSON.stringify(actualScoreA),
+    predScoreB: pred.scoreB,
+    predScoreBType: typeof pred.scoreB,
+    predScoreBJSON: JSON.stringify(pred.scoreB),
+    actualScoreB,
+    actualScoreBType: typeof actualScoreB,
+    actualScoreBJSON: JSON.stringify(actualScoreB),
+    compareA,
+    compareB,
+    correct,
+  }));
+
   const pointsEarned = correct ? 15 : 0;
 
   await prisma.$transaction(async (tx: any) => {

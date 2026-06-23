@@ -286,6 +286,21 @@ export async function processFinishedMatches() {
   let scored = 0;
   for (const fixture of finished) {
     const unscored = fixture.predictions.filter((p: { status: string }) => p.status === 'OPEN');
+
+    if (fixture.id === 'ff_I_52') {
+      console.log('[processFinishedMatches] ff_I_52', JSON.stringify({
+        fixtureId: fixture.id,
+        actualScoreA: fixture.actualScoreA,
+        actualScoreB: fixture.actualScoreB,
+        isClosed: fixture.isClosed,
+        status: fixture.status,
+        unscoredCount: unscored.length,
+        totalPredictions: fixture.predictions.length,
+        predScoreAType: fixture.predictions.length > 0 ? typeof fixture.predictions[0].scoreA : 'N/A',
+        actualScoreAType: typeof fixture.actualScoreA,
+      }));
+    }
+
     for (const pred of unscored) {
       await scoreFixture(pred.id, fixture.actualScoreA!, fixture.actualScoreB!);
       scored++;
