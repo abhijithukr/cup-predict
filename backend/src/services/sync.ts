@@ -323,7 +323,7 @@ export async function syncLiveScores() {
   const pastUnscored = await prisma.fixture.findMany({
     where: { kickoffTime: { lte: new Date() }, actualScoreA: null, id: { startsWith: 'ff_' } },
     select: { teamACode: true, teamBCode: true },
-    take: 5,
+    orderBy: { kickoffTime: 'asc' },
   });
 
   const neededSlugs = new Set<string>();

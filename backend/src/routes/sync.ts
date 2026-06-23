@@ -28,4 +28,15 @@ router.post('/livescores', authMiddleware, adminMiddleware, async (_req: Request
   }
 });
 
+router.post('/rescore', authMiddleware, adminMiddleware, async (_req: Request, res: Response) => {
+  try {
+    await syncLiveScores();
+    const scored = await processFinishedMatches();
+    res.json({ message: 'Rescore complete', predictionsScored: scored });
+  } catch (err) {
+    console.error('Rescore error:', err);
+    res.status(500).json({ error: 'Rescore failed' });
+  }
+});
+
 export default router;

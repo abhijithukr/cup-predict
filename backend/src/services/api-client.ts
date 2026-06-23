@@ -15,7 +15,7 @@ async function fetchFromSportScore(path: string) {
 }
 
 export async function getAllMatches() {
-  return fetchFromSportScore('/api/widget/matches/?sport=football&limit=50');
+  return fetchFromSportScore('/api/widget/matches/?sport=football&limit=200');
 }
 
 export async function getFifaStandings() {
