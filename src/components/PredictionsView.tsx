@@ -3,7 +3,7 @@ import { getFixtures, submitPrediction } from '../api';
 import { Check, Info, Lock, Verified } from 'lucide-react';
 
 function isMatchLocked(f: any): boolean {
-  return f.isClosed || (f.kickoffTime && new Date(f.kickoffTime) <= new Date());
+  return f.isClosed || f.actualScoreA !== null || (f.kickoffTime && new Date(f.kickoffTime) <= new Date());
 }
 
 export default function PredictionsView() {
@@ -11,6 +11,8 @@ export default function PredictionsView() {
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,8 @@ export default function PredictionsView() {
         setLoading(false);
       }
     })();
+    const tick = setInterval(() => forceUpdate(n => n + 1), 1000);
+    return () => clearInterval(tick);
   }, []);
 
   const handleScoreChange = (id: string, team: 'A' | 'B', val: string) => {

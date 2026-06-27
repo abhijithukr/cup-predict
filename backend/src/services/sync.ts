@@ -195,6 +195,9 @@ async function overlaySportScoreScore(match: any) {
     }
   } else if (match.status === 'live' || match.status === 'inprogress') {
     updates.status = 'live';
+  } else if (existing.actualScoreA !== null) {
+    updates.isClosed = true;
+    updates.status = 'finished';
   }
 
   if (Object.keys(updates).length > 0) {

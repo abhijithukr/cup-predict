@@ -41,6 +41,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
 
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [leaderboardFull, setLeaderboardFull] = useState<any[]>([]);
+  const [, forceUpdate] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -53,7 +54,8 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
       loadLeaderboard();
       loadLiveData();
     }, 15000);
-    return () => clearInterval(interval);
+    const tick = setInterval(() => forceUpdate(n => n + 1), 1000);
+    return () => { clearInterval(interval); clearInterval(tick); };
   }, [user]);
 
   useEffect(() => {
@@ -118,6 +120,11 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
   async function handleFixturePredict(id: string) {
     const s = fixtureScores[id];
     if (!s?.a.trim() || !s?.b.trim()) return;
+    const f = allFixtures.find(fx => fx.id === id);
+    if (f && (f.isClosed || f.actualScoreA !== null || new Date(f.kickoffTime) <= new Date())) {
+      alert('Match has already started or closed');
+      return;
+    }
     const a = parseInt(s.a);
     const b = parseInt(s.b);
     if (isNaN(a) || isNaN(b) || a < 0 || b < 0) {
@@ -298,7 +305,7 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFixtures.map((f: any) => {
                   const s = fixtureScores[f.id] || { a: '', b: '' };
-                  const isPast = new Date(f.kickoffTime) <= new Date() || f.isClosed;
+                  const isPast = f.isClosed || f.actualScoreA !== null || new Date(f.kickoffTime) <= new Date();
                   const justSaved = savedFixtures[f.id];
                   return (
                     <div key={f.id} className="bg-zinc-950 p-5 border border-zinc-800 hover:border-zinc-600 transition-all">

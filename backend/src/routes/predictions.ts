@@ -15,8 +15,16 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return;
     }
 
-    if (fixture.isClosed || new Date() > fixture.kickoffTime) {
+    if (fixture.isClosed || fixture.actualScoreA !== null || new Date() > fixture.kickoffTime) {
       res.status(400).json({ error: 'Match has already started or closed' });
+      return;
+    }
+
+    const existing = await prisma.prediction.findUnique({
+      where: { userId_fixtureId: { userId, fixtureId } },
+    });
+    if (existing && existing.status !== 'OPEN') {
+      res.status(400).json({ error: 'Prediction already scored, cannot modify' });
       return;
     }
 
