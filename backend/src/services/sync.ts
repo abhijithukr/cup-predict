@@ -98,22 +98,22 @@ const GROUP_FIXTURES: FixtureSeed[] = [
   { groupName: 'Group J', home: 'Austria', away: 'Jordan', kickoff: '2026-06-17T04:00:00Z' },
   { groupName: 'Group J', home: 'Argentina', away: 'Austria', kickoff: '2026-06-22T17:00:00Z' },
   { groupName: 'Group J', home: 'Jordan', away: 'Algeria', kickoff: '2026-06-23T03:00:00Z' },
-  { groupName: 'Group J', home: 'Algeria', away: 'Austria', kickoff: '2026-06-28T18:00:00Z' },
-  { groupName: 'Group J', home: 'Jordan', away: 'Argentina', kickoff: '2026-06-28T18:00:00Z' },
+  { groupName: 'Group J', home: 'Algeria', away: 'Austria', kickoff: '2026-06-28T02:00:00Z' },
+  { groupName: 'Group J', home: 'Jordan', away: 'Argentina', kickoff: '2026-06-28T02:00:00Z' },
   // Group K
   { groupName: 'Group K', home: 'Portugal', away: 'DR Congo', kickoff: '2026-06-17T17:00:00Z' },
   { groupName: 'Group K', home: 'Uzbekistan', away: 'Colombia', kickoff: '2026-06-18T02:00:00Z' },
   { groupName: 'Group K', home: 'Portugal', away: 'Uzbekistan', kickoff: '2026-06-23T17:00:00Z' },
   { groupName: 'Group K', home: 'Colombia', away: 'DR Congo', kickoff: '2026-06-24T02:00:00Z' },
-  { groupName: 'Group K', home: 'Colombia', away: 'Portugal', kickoff: '2026-06-28T22:30:00Z' },
-  { groupName: 'Group K', home: 'DR Congo', away: 'Uzbekistan', kickoff: '2026-06-28T22:30:00Z' },
+  { groupName: 'Group K', home: 'Colombia', away: 'Portugal', kickoff: '2026-06-27T22:30:00Z' },
+  { groupName: 'Group K', home: 'DR Congo', away: 'Uzbekistan', kickoff: '2026-06-27T22:30:00Z' },
   // Group L
   { groupName: 'Group L', home: 'Ghana', away: 'Panama', kickoff: '2026-06-16T23:00:00Z' },
   { groupName: 'Group L', home: 'England', away: 'Croatia', kickoff: '2026-06-17T20:00:00Z' },
   { groupName: 'Group L', home: 'England', away: 'Ghana', kickoff: '2026-06-23T20:00:00Z' },
   { groupName: 'Group L', home: 'Panama', away: 'Croatia', kickoff: '2026-06-22T23:00:00Z' },
-  { groupName: 'Group L', home: 'Panama', away: 'England', kickoff: '2026-06-27T01:00:00Z' },
-  { groupName: 'Group L', home: 'Croatia', away: 'Ghana', kickoff: '2026-06-27T01:00:00Z' },
+  { groupName: 'Group L', home: 'Panama', away: 'England', kickoff: '2026-06-27T22:00:00Z' },
+  { groupName: 'Group L', home: 'Croatia', away: 'Ghana', kickoff: '2026-06-27T22:00:00Z' },
 ];
 
 function groupNumToLetter(groupNum: string): string {
