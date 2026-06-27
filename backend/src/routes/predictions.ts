@@ -9,6 +9,11 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     const { fixtureId, scoreA, scoreB } = req.body;
     const userId = req.user!.userId;
 
+    if (!Number.isInteger(scoreA) || !Number.isInteger(scoreB) || scoreA < 0 || scoreB < 0) {
+      res.status(400).json({ error: 'Scores must be non-negative integers' });
+      return;
+    }
+
     const fixture = await prisma.fixture.findUnique({ where: { id: fixtureId } });
     if (!fixture) {
       res.status(404).json({ error: 'Fixture not found' });
