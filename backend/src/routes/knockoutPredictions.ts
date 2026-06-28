@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/auth';
-import { generateBracket, advanceWinners, GroupStanding } from '../services/bracketGenerator';
+import { generateBracket, advanceWinners } from '../services/bracketGenerator';
 
 const router = Router();
 
@@ -11,30 +11,54 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       where: { userId: req.user!.userId },
     });
 
+    const groupResults = await prisma.groupResult.findMany({ orderBy: { groupName: 'asc' } });
+    if (groupResults.length < 12) {
+      res.status(400).json({ error: 'Group stage not yet complete' });
+      return;
+    }
+
+    const bracket = generateBracket(groupResults);
+
     if (existing) {
-      res.json(existing);
+      const saved = existing.bracket as any;
+
+      // Check if saved bracket is from old format (match# < 73) — reset if so
+      const oldFormat = saved.roundOf32?.some((m: any) => m.match < 73);
+      if (oldFormat) {
+        await prisma.knockoutPrediction.delete({ where: { userId: req.user!.userId } });
+        const advanced = advanceWinners(bracket);
+        res.json({ bracket: advanced, locked: false });
+        return;
+      }
+
+      const r32 = saved.roundOf32 || [];
+      for (const m of r32) {
+        const live = bracket.roundOf32.find(x => x.match === m.match);
+        if (live) live.winner = m.winner || null;
+      }
+      const r16 = saved.roundOf16 || [];
+      for (const m of r16) {
+        const live = bracket.roundOf16.find(x => x.match === m.match);
+        if (live) live.winner = m.winner || null;
+      }
+      const qf = saved.quarterFinals || [];
+      for (const m of qf) {
+        const live = bracket.quarterFinals.find(x => x.match === m.match);
+        if (live) live.winner = m.winner || null;
+      }
+      const sf = saved.semiFinals || [];
+      for (const m of sf) {
+        const live = bracket.semiFinals.find(x => x.match === m.match);
+        if (live) live.winner = m.winner || null;
+      }
+      if (saved.final?.winner) {
+        bracket.final.winner = saved.final.winner;
+      }
+      const advanced = advanceWinners(bracket);
+      res.json({ bracket: advanced, locked: existing.locked });
       return;
     }
 
-    // Build bracket from group predictions
-    const groupPreds = await prisma.groupPrediction.findMany({
-      where: { userId: req.user!.userId },
-    });
-
-    if (groupPreds.length < 12) {
-      res.status(400).json({ error: 'Complete all 12 group predictions first' });
-      return;
-    }
-
-    const standings: GroupStanding[] = groupPreds.map((g: { groupName: string; firstCode: string; secondCode: string; thirdCode: string | null; thirdQualifies: boolean }) => ({
-      groupName: g.groupName,
-      first: g.firstCode,
-      second: g.secondCode,
-      third: g.thirdCode,
-      thirdQualifies: g.thirdQualifies,
-    }));
-
-    const bracket = generateBracket(standings);
     res.json({ bracket, locked: false });
   } catch (err) {
     console.error('Fetch knockout predictions error:', err);

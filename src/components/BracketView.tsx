@@ -89,6 +89,10 @@ export default function BracketView() {
     setTeamNames(names);
   }
 
+  function findMatch(round: BracketMatch[], matchNum: number): BracketMatch | undefined {
+    return round.find(m => m.match === matchNum);
+  }
+
   function handlePick(roundKey: RoundKey, matchIdx: number, team: 'A' | 'B') {
     if (isLocked || !bracket) return;
     const next = JSON.parse(JSON.stringify(bracket)) as BracketTree;
@@ -107,27 +111,47 @@ export default function BracketView() {
     setBracket(next);
   }
 
+  const R16_FEED: Array<[number, number]> = [
+    [73, 75], [74, 77], [76, 78], [79, 80],
+    [83, 84], [81, 82], [86, 88], [85, 87],
+  ];
+  const QF_FEED: Array<[number, number]> = [
+    [89, 90], [93, 94], [91, 92], [95, 96],
+  ];
+  const SF_FEED: Array<[number, number]> = [
+    [97, 98], [99, 100],
+  ];
+
   function advanceToNext(b: BracketTree) {
-    const feeds: [keyof BracketTree, keyof BracketTree][] = [
-      ['roundOf32', 'roundOf16'],
-      ['roundOf16', 'quarterFinals'],
-      ['quarterFinals', 'semiFinals'],
-    ];
-    for (const [fromKey, toKey] of feeds) {
-      const from = b[fromKey] as BracketMatch[];
-      const to = b[toKey] as BracketMatch[];
-      to.forEach((m, i) => {
-        const a = from[i * 2];
-        const bMatch = from[i * 2 + 1];
-        m.teamA = a?.winner ?? null;
-        m.teamB = bMatch?.winner ?? null;
-        if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-      });
+    for (let i = 0; i < 8; i++) {
+      const m = b.roundOf16[i];
+      const a = findMatch(b.roundOf32, R16_FEED[i][0]);
+      const bM = findMatch(b.roundOf32, R16_FEED[i][1]);
+      if (!m) continue;
+      m.teamA = a?.winner ?? null;
+      m.teamB = bM?.winner ?? null;
+      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
     }
-    b.semiFinals.forEach((m, i) => {
-      if (i === 0) b.final.teamA = m.winner;
-      else b.final.teamB = m.winner;
-    });
+    for (let i = 0; i < 4; i++) {
+      const m = b.quarterFinals[i];
+      const a = findMatch(b.roundOf16, QF_FEED[i][0]);
+      const bM = findMatch(b.roundOf16, QF_FEED[i][1]);
+      if (!m) continue;
+      m.teamA = a?.winner ?? null;
+      m.teamB = bM?.winner ?? null;
+      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+    }
+    for (let i = 0; i < 2; i++) {
+      const m = b.semiFinals[i];
+      const a = findMatch(b.quarterFinals, SF_FEED[i][0]);
+      const bM = findMatch(b.quarterFinals, SF_FEED[i][1]);
+      if (!m) continue;
+      m.teamA = a?.winner ?? null;
+      m.teamB = bM?.winner ?? null;
+      if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+    }
+    b.final.teamA = b.semiFinals[0]?.winner ?? null;
+    b.final.teamB = b.semiFinals[1]?.winner ?? null;
     if (b.final.winner && b.final.winner !== b.final.teamA && b.final.winner !== b.final.teamB) {
       b.final.winner = null;
     }

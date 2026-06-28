@@ -1,11 +1,3 @@
-export interface GroupStanding {
-  groupName: string;
-  first: string;
-  second: string;
-  third: string | null;
-  thirdQualifies: boolean;
-}
-
 export interface BracketMatch {
   match: number;
   teamA: string | null;
@@ -23,196 +15,132 @@ export interface BracketTree {
   final: BracketMatch;
 }
 
-interface TeamSlot {
-  code: string;
-  group: string;
+interface GroupResult {
+  groupName: string;
+  firstCode: string;
+  secondCode: string;
+  thirdCode: string;
 }
 
-function buildRound(n: number): BracketMatch[] {
-  return Array.from({ length: n }, (_, i) => ({
-    match: i + 1,
-    teamA: null,
-    teamB: null,
-    teamAPosition: null,
-    teamBPosition: null,
-    winner: null,
-  }));
-}
-
-function feedNext(prev: BracketMatch[], next: BracketMatch[]) {
-  next.forEach((m, i) => {
-    const a = prev[i * 2];
-    const b = prev[i * 2 + 1];
-    m.teamA = a?.winner ?? null;
-    m.teamB = b?.winner ?? null;
-    m.teamAPosition = null;
-    m.teamBPosition = null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-}
-
-const GROUP_NAMES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-
-function lookupTeam(pos: string, groups: string, standings: GroupStanding[]): string | null {
-  const typed = standings.find(s => {
-    const g = s.groupName.replace('Group ', '');
-    return groups.includes(g);
-  });
-  if (!typed) return null;
-
-  if (pos === '1st') {
-    const g = standings.find(s => s.groupName.replace('Group ', '') === groups[0]);
-    return g?.first ?? null;
-  }
-  if (pos === '2nd') {
-    const g = standings.find(s => s.groupName.replace('Group ', '') === groups[0]);
-    return g?.second ?? null;
-  }
-  if (pos === '3rd') {
-    for (const c of groups) {
-      const g = standings.find(s => s.groupName.replace('Group ', '') === c);
-      if (g?.third && g.thirdQualifies) return g.third;
-    }
-    return null;
-  }
-  return null;
-}
-
-// FIFA 2026 official Round of 32 bracket
-const R32_TEMPLATE: Array<{ a: string; b: string }> = [
-  { a: '1st:E', b: '3rd:ABCDF' },
-  { a: '1st:I', b: '3rd:CDFGH' },
-  { a: '2nd:A', b: '2nd:B' },
-  { a: '1st:F', b: '2nd:C' },
-  { a: '2nd:K', b: '2nd:L' },
-  { a: '1st:H', b: '2nd:J' },
-  { a: '1st:D', b: '3rd:BEFIJ' },
-  { a: '1st:G', b: '3rd:AEHIJ' },
-  { a: '1st:C', b: '2nd:F' },
-  { a: '2nd:E', b: '2nd:I' },
-  { a: '1st:A', b: '3rd:CEFHI' },
-  { a: '1st:L', b: '3rd:EHIJK' },
-  { a: '1st:J', b: '2nd:H' },
-  { a: '2nd:D', b: '2nd:G' },
-  { a: '1st:B', b: '3rd:EFGIJ' },
-  { a: '1st:K', b: '3rd:DEIJL' },
+// FIFA 2026 official Round of 32 (Matches 73-88)
+// Annex C for qualified third-place groups: {B, D, E, F, I, J, K, L}
+const R32_DEFS: Array<{ match: number; a: string; b: string }> = [
+  { match: 73, a: '2nd:A', b: '2nd:B' },
+  { match: 74, a: '1st:E', b: '3rd:D' },
+  { match: 75, a: '1st:F', b: '2nd:C' },
+  { match: 76, a: '1st:C', b: '2nd:F' },
+  { match: 77, a: '1st:I', b: '3rd:F' },
+  { match: 78, a: '2nd:E', b: '2nd:I' },
+  { match: 79, a: '1st:A', b: '3rd:E' },
+  { match: 80, a: '1st:L', b: '3rd:K' },
+  { match: 81, a: '1st:D', b: '3rd:B' },
+  { match: 82, a: '1st:G', b: '3rd:I' },
+  { match: 83, a: '2nd:K', b: '2nd:L' },
+  { match: 84, a: '1st:H', b: '2nd:J' },
+  { match: 85, a: '1st:B', b: '3rd:J' },
+  { match: 86, a: '1st:J', b: '2nd:H' },
+  { match: 87, a: '1st:K', b: '3rd:L' },
+  { match: 88, a: '2nd:D', b: '2nd:G' },
 ];
 
-function resolveSlot(spec: string, standings: GroupStanding[]): { code: string | null; position: '1st' | '2nd' | '3rd' | null } {
-  const parts = spec.split(':');
-  if (parts.length !== 2) return { code: null, position: null };
+// R16 feeds: which R32 winners feed into each R16 match
+const R16_FEEDS: Array<{ match: number; feed: [number, number] }> = [
+  { match: 89, feed: [73, 75] },
+  { match: 90, feed: [74, 77] },
+  { match: 91, feed: [76, 78] },
+  { match: 92, feed: [79, 80] },
+  { match: 93, feed: [83, 84] },
+  { match: 94, feed: [81, 82] },
+  { match: 95, feed: [86, 88] },
+  { match: 96, feed: [85, 87] },
+];
 
-  const [pos, groupsStr] = parts;
+const QF_FEEDS: Array<{ match: number; feed: [number, number] }> = [
+  { match: 97, feed: [89, 90] },
+  { match: 98, feed: [93, 94] },
+  { match: 99, feed: [91, 92] },
+  { match: 100, feed: [95, 96] },
+];
 
-  if (pos === '1st') {
-    const g = standings.find(s => s.groupName.replace('Group ', '') === groupsStr);
-    return { code: g?.first ?? null, position: '1st' };
-  }
-  if (pos === '2nd') {
-    const g = standings.find(s => s.groupName.replace('Group ', '') === groupsStr);
-    return { code: g?.second ?? null, position: '2nd' };
-  }
-  if (pos === '3rd') {
-    for (const c of groupsStr) {
-      const g = standings.find(s => s.groupName.replace('Group ', '') === c);
-      if (g?.third && g.thirdQualifies) {
-        return { code: g.third, position: '3rd' };
-      }
-    }
-    return { code: null, position: null };
-  }
-  return { code: null, position: null };
+const SF_FEEDS: Array<{ match: number; feed: [number, number] }> = [
+  { match: 101, feed: [97, 98] },
+  { match: 102, feed: [99, 100] },
+];
+
+type Pos = '1st' | '2nd' | '3rd';
+
+function resolve(spec: string, groups: GroupResult[]): { code: string | null; pos: Pos | null } {
+  const [p, groupLetter] = spec.split(':') as [string, string];
+  const g = groups.find(x => x.groupName.replace('Group ', '') === groupLetter);
+  if (!g) return { code: null, pos: null };
+  if (p === '1st') return { code: g.firstCode, pos: '1st' };
+  if (p === '2nd') return { code: g.secondCode, pos: '2nd' };
+  if (p === '3rd') return { code: g.thirdCode, pos: '3rd' };
+  return { code: null, pos: null };
 }
 
-export function generateBracket(standings: GroupStanding[]): BracketTree {
-  const roundOf32: BracketMatch[] = R32_TEMPLATE.map((slot, i) => {
-    const a = resolveSlot(slot.a, standings);
-    const b = resolveSlot(slot.b, standings);
-    return {
-      match: i + 1,
-      teamA: a.code,
-      teamB: b.code,
-      teamAPosition: a.position,
-      teamBPosition: b.position,
-      winner: null,
-    };
+export function generateBracket(groups: GroupResult[]): BracketTree {
+  const r32 = R32_DEFS.map(spec => {
+    const a = resolve(spec.a, groups);
+    const b = resolve(spec.b, groups);
+    return { match: spec.match, teamA: a.code, teamB: b.code, teamAPosition: a.pos, teamBPosition: b.pos, winner: null } as BracketMatch;
   });
 
-  // R16 feeds: sequential pairs of R32 winners
-  // W1 vs W2, W3 vs W4, W5 vs W6, W7 vs W8,
-  // W9 vs W10, W11 vs W12, W13 vs W14, W15 vs W16
-  const roundOf16 = buildRound(8);
-  roundOf16.forEach((m, i) => {
-    const a = roundOf32[i * 2];
-    const b = roundOf32[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = b.winner ?? null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-
-  // QF feeds: sequential pairs of R16 winners
-  const quarterFinals = buildRound(4);
-  quarterFinals.forEach((m, i) => {
-    const a = roundOf16[i * 2];
-    const b = roundOf16[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = b.winner ?? null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-
-  // SF feeds: sequential pairs of QF winners
-  const semiFinals = buildRound(2);
-  semiFinals.forEach((m, i) => {
-    const a = quarterFinals[i * 2];
-    const b = quarterFinals[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = b.winner ?? null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-
-  // Final: SF1 winner vs SF2 winner
-  const final = buildRound(1)[0];
-  final.teamA = semiFinals[0].winner ?? null;
-  final.teamB = semiFinals[1].winner ?? null;
-  if (final.winner && final.winner !== final.teamA && final.winner !== final.teamB) {
-    final.winner = null;
+  function feedFrom(prev: BracketMatch[], defs: Array<{ match: number; feed: [number, number] }>): BracketMatch[] {
+    return defs.map(d => {
+      const a = prev.find(m => m.match === d.feed[0]);
+      const b = prev.find(m => m.match === d.feed[1]);
+      return { match: d.match, teamA: a?.winner ?? null, teamB: b?.winner ?? null, teamAPosition: null, teamBPosition: null, winner: null } as BracketMatch;
+    });
   }
 
-  return { roundOf32, roundOf16, quarterFinals, semiFinals, final };
+  const r16 = feedFrom(r32, R16_FEEDS);
+  const qf = feedFrom(r16, QF_FEEDS);
+  const sf = feedFrom(qf, SF_FEEDS);
+  const final: BracketMatch = { match: 103, teamA: sf[0].winner ?? null, teamB: sf[1].winner ?? null, teamAPosition: null, teamBPosition: null, winner: null };
+
+  return { roundOf32: r32, roundOf16: r16, quarterFinals: qf, semiFinals: sf, final };
 }
 
 export function advanceWinners(bracket: BracketTree): BracketTree {
   const b = JSON.parse(JSON.stringify(bracket)) as BracketTree;
 
-  b.roundOf16.forEach((m, i) => {
-    const a = b.roundOf32[i * 2];
-    const bMatch = b.roundOf32[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = bMatch.winner ?? null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
+  const r32Map = new Map(b.roundOf32.map(m => [m.match, m]));
+  const r16Map = new Map(b.roundOf16.map(m => [m.match, m]));
+  const qfMap = new Map(b.quarterFinals.map(m => [m.match, m]));
+  const sfMap = new Map(b.semiFinals.map(m => [m.match, m]));
 
-  b.quarterFinals.forEach((m, i) => {
-    const a = b.roundOf16[i * 2];
-    const bMatch = b.roundOf16[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = bMatch.winner ?? null;
+  for (const d of R16_FEEDS) {
+    const m = r16Map.get(d.match)!;
+    const a = r32Map.get(d.feed[0]);
+    const bM = r32Map.get(d.feed[1]);
+    m.teamA = a?.winner ?? null;
+    m.teamB = bM?.winner ?? null;
     if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-
-  b.semiFinals.forEach((m, i) => {
-    const a = b.quarterFinals[i * 2];
-    const bMatch = b.quarterFinals[i * 2 + 1];
-    m.teamA = a.winner ?? null;
-    m.teamB = bMatch.winner ?? null;
-    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
-  });
-
-  b.final.teamA = b.semiFinals[0].winner ?? null;
-  b.final.teamB = b.semiFinals[1].winner ?? null;
-  if (b.final.winner && b.final.winner !== b.final.teamA && b.final.winner !== b.final.teamB) {
-    b.final.winner = null;
   }
+
+  for (const d of QF_FEEDS) {
+    const m = qfMap.get(d.match)!;
+    const a = r16Map.get(d.feed[0]);
+    const bM = r16Map.get(d.feed[1]);
+    m.teamA = a?.winner ?? null;
+    m.teamB = bM?.winner ?? null;
+    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+  }
+
+  for (const d of SF_FEEDS) {
+    const m = sfMap.get(d.match)!;
+    const a = qfMap.get(d.feed[0]);
+    const bM = qfMap.get(d.feed[1]);
+    m.teamA = a?.winner ?? null;
+    m.teamB = bM?.winner ?? null;
+    if (m.winner && m.winner !== m.teamA && m.winner !== m.teamB) m.winner = null;
+  }
+
+  const f = b.final;
+  f.teamA = sfMap.get(101)?.winner ?? null;
+  f.teamB = sfMap.get(102)?.winner ?? null;
+  if (f.winner && f.winner !== f.teamA && f.winner !== f.teamB) f.winner = null;
 
   return b;
 }
