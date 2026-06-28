@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Save, Info, Shield, Lock, Clock } from 'lucide-react';
-import { getGroupPredictions, saveGroupPredictions } from '../api';
+import { Shield, Trophy, Medal } from 'lucide-react';
+import { getGroupPredictions, getGroupStandings } from '../api';
 
 const FIFA_TO_ISO: Record<string, string> = {
   MEX:'mx', KOR:'kr', CZE:'cz', RSA:'za', CAN:'ca', BIH:'ba', QAT:'qa', SUI:'ch',
@@ -16,36 +16,56 @@ function flagUrl(code: string): string {
   return iso ? `https://flagcdn.com/w40/${iso}.png` : '';
 }
 
-interface TeamInfo {
+interface TeamStanding {
   code: string;
   name: string;
   flagUrl: string;
+  pts: number;
+  gd: number;
+  gf: number;
+  ga: number;
+  position: number;
 }
 
-interface GroupData {
+interface GroupStandingResult {
   groupName: string;
-  teams: TeamInfo[];
+  standings: TeamStanding[];
+}
+
+interface GroupPrediction {
+  groupName: string;
+  teams: { code: string; name: string; flagUrl: string }[];
   prediction: { firstCode: string; secondCode: string; thirdCode: string | null; thirdQualifies: boolean } | null;
 }
 
-export default function GroupStageView() {
-  const [groups, setGroups] = useState<GroupData[]>([]);
-  const [picks, setPicks] = useState<Record<string, { first: string | null; second: string | null; third: string | null }>>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+interface GroupPicks {
+  [groupName: string]: { first: string | null; second: string | null; third: string | null };
+}
 
-  const DEADLINE = new Date('2026-06-17T18:30:00Z');
-  const isClosed = new Date() > DEADLINE;
+function getPredictedRank(picks: { first: string | null; second: string | null; third: string | null } | undefined, teamCode: string): number | null {
+  if (!picks) return null;
+  if (picks.first === teamCode) return 1;
+  if (picks.second === teamCode) return 2;
+  if (picks.third === teamCode) return 3;
+  return null;
+}
+
+export default function GroupStageView() {
+  const [standings, setStandings] = useState<GroupStandingResult[]>([]);
+  const [picks, setPicks] = useState<GroupPicks>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await getGroupPredictions();
-        setGroups(data);
-        const init: Record<string, { first: string | null; second: string | null; third: string | null }> = {};
-        for (const g of data) {
+        const [standingsData, groupsData] = await Promise.all([
+          getGroupStandings(),
+          getGroupPredictions(),
+        ]);
+        setStandings(standingsData);
+        const init: GroupPicks = {};
+        for (const g of groupsData as GroupPrediction[]) {
           init[g.groupName] = {
             first: g.prediction?.firstCode || null,
             second: g.prediction?.secondCode || null,
@@ -61,90 +81,6 @@ export default function GroupStageView() {
     })();
   }, []);
 
-  function directRank(groupName: string, teamCode: string, rank: 1 | 2 | 3) {
-    const group = picks[groupName];
-    if (!group) return;
-    const next = { ...group };
-    const currentThirdCount = (Object.values(picks) as { first: string | null; second: string | null; third: string | null }[]).filter(p => p.third !== null).length;
-
-    if (rank === 1) {
-      if (next.first === teamCode) { next.first = null; return; }
-      if (next.second === teamCode) next.second = null;
-      if (next.third === teamCode) next.third = null;
-      next.first = teamCode;
-    } else if (rank === 2) {
-      if (next.second === teamCode) { next.second = null; return; }
-      if (next.first === teamCode) next.first = null;
-      if (next.third === teamCode) next.third = null;
-      next.second = teamCode;
-    } else {
-      if (next.third === teamCode) { next.third = null; return; }
-      if (group.third) { next.third = teamCode; }
-      else {
-        if (currentThirdCount >= 8) return;
-        if (next.first === teamCode) next.first = null;
-        if (next.second === teamCode) next.second = null;
-        next.third = teamCode;
-      }
-    }
-
-    setPicks(prev => ({ ...prev, [groupName]: next }));
-  }
-
-  function getTeamName(code: string | null): string {
-    if (!code) return '';
-    for (const g of groups) {
-      const t = g.teams.find(t => t.code === code);
-      if (t) return t.name;
-    }
-    return code;
-  }
-
-  function getTeamRank(groupName: string, teamCode: string): number | null {
-    const group = picks[groupName];
-    if (!group) return null;
-    if (group.first === teamCode) return 1;
-    if (group.second === teamCode) return 2;
-    if (group.third === teamCode) return 3;
-    return null;
-  }
-
-  const allGroupsComplete = groups.every(g => {
-    const p = picks[g.groupName];
-    return p && p.first && p.second;
-  });
-
-  const thirdCount = (Object.values(picks) as { first: string | null; second: string | null; third: string | null }[]).filter(p => p.third !== null).length;
-
-  async function handleSave() {
-    if (!allGroupsComplete) {
-      alert('Please select at least 1st and 2nd place for all 12 groups.');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-    try {
-      const data = groups.map(g => {
-        const p = picks[g.groupName];
-        return {
-          groupName: g.groupName,
-          firstCode: p.first!,
-          secondCode: p.second!,
-          thirdCode: p.third || null,
-          thirdQualifies: !!p.third,
-        };
-      });
-      await saveGroupPredictions(data);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center py-20">
@@ -156,34 +92,16 @@ export default function GroupStageView() {
   return (
     <div className="w-full space-y-6">
       <header className="mb-4">
-        <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">Group Stage Predictor</h1>
-        <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">
-          {isClosed ? 'Predictions are locked — Time Over' : 'Pick 1st and 2nd for all 12 groups, then 3rd for up to 8 groups'}
-        </p>
+        <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">Group Stage Standings</h1>
+        <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">Final standings after all group matches</p>
       </header>
-
-      {isClosed && (
-        <div className="bg-red-950/40 border border-red-800 text-red-400 p-4 text-xs font-bold uppercase tracking-wider flex items-center gap-3">
-          <Clock size={18} />
-          <span>Group predictions are closed. You can view your picks below.</span>
-        </div>
-      )}
 
       {error && (
         <div className="bg-red-950/40 border border-red-800 text-red-400 p-4 text-xs font-bold uppercase tracking-wider">{error}</div>
       )}
 
-      {!isClosed && thirdCount > 0 && (
-        <div className="bg-zinc-900 border border-zinc-800 px-5 py-3 flex items-center gap-2">
-          <Shield size={14} className="text-amber-500" />
-          <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
-            {thirdCount}/8 third-place slots filled
-          </span>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {groups.map(group => {
+        {standings.map(group => {
           const groupPicks = picks[group.groupName] || { first: null, second: null, third: null };
 
           return (
@@ -193,102 +111,111 @@ export default function GroupStageView() {
                 <Shield size={14} className="text-zinc-500" />
               </div>
 
-              <div className="p-3 space-y-1.5">
-                {group.teams.map(team => {
-                  const rank = getTeamRank(group.groupName, team.code);
-                  const thirdSlotFull = thirdCount >= 8 && rank !== 3;
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-800">
+                      <th className="text-left px-3 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px] w-8">#</th>
+                      <th className="text-left px-2 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px]">Team</th>
+                      <th className="text-center px-2 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px] w-8">Pts</th>
+                      <th className="text-center px-2 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px] w-8">GD</th>
+                      <th className="text-center px-2 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px] w-8">GF</th>
+                      <th className="text-center px-2 py-2 text-zinc-500 font-black uppercase tracking-wider text-[10px] w-14">Your Pick</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.standings.map(team => {
+                      const predictedRank = getPredictedRank(groupPicks, team.code);
+                      const actualPosition = team.position;
+                      const correct = predictedRank === actualPosition;
 
-                  return (
-                    <div key={team.code} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 p-2.5">
-                      <img loading="lazy" src={flagUrl(team.code)} className="w-6 h-4 object-contain shrink-0" alt="" />
-                      <span className="flex-1 text-xs font-bold text-zinc-300 uppercase tracking-wider truncate">
-                        {team.name}
-                      </span>
-                      {isClosed ? (
-                        rank && (
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 ${
-                            rank === 1 ? 'bg-yellow-500 text-black' :
-                            rank === 2 ? 'bg-zinc-200 text-black' :
-                            'bg-amber-700 text-white'
-                          }`}>
-                            {rank === 1 ? '1st' : rank === 2 ? '2nd' : '3rd'}
-                          </span>
-                        )
-                      ) : (
-                        <div className="flex gap-1">
-                          {([1, 2, 3] as const).map(r => {
-                            const isActive = rank === r;
-                            const isThirdDisabled = r === 3 && thirdSlotFull;
-                            return (
-                              <button
-                                key={r}
-                                onClick={() => directRank(group.groupName, team.code, r)}
-                                disabled={isThirdDisabled}
-                                className={`w-7 h-7 text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
-                                  isActive
-                                    ? r === 1
-                                      ? 'bg-yellow-500 text-black border-yellow-500'
-                                      : r === 2
-                                      ? 'bg-zinc-200 text-black border-zinc-200'
-                                      : 'bg-amber-700 text-white border-amber-700'
-                                    : isThirdDisabled
-                                    ? 'bg-zinc-800 text-zinc-600 border-zinc-700 cursor-not-allowed opacity-40'
-                                    : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500 hover:text-zinc-300'
-                                }`}
-                              >
-                                {r === 1 ? '1st' : r === 2 ? '2nd' : '3rd'}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                      return (
+                        <tr key={team.code} className="border-b border-zinc-800/50 hover:bg-zinc-900/50">
+                          <td className="px-3 py-2.5">
+                            <span className={`font-black text-xs ${
+                              actualPosition === 1 ? 'text-yellow-400' :
+                              actualPosition === 2 ? 'text-zinc-300' :
+                              actualPosition === 3 ? 'text-amber-600' :
+                              'text-zinc-600'
+                            }`}>
+                              {actualPosition}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <div className="flex items-center gap-2">
+                              <img loading="lazy" src={flagUrl(team.code)} className="w-5 h-3.5 object-contain shrink-0" alt="" />
+                              <span className="font-bold text-zinc-200 uppercase tracking-wider truncate">{team.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-2 py-2.5 text-center font-black text-zinc-100">{team.pts}</td>
+                          <td className={`px-2 py-2.5 text-center font-black ${
+                            team.gd > 0 ? 'text-green-400' : team.gd < 0 ? 'text-red-400' : 'text-zinc-400'
+                          }`}>{team.gd > 0 ? `+${team.gd}` : team.gd}</td>
+                          <td className="px-2 py-2.5 text-center font-black text-zinc-300">{team.gf}</td>
+                          <td className="px-2 py-2.5 text-center">
+                            {predictedRank ? (
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 ${
+                                correct
+                                  ? 'bg-green-900/60 text-green-400'
+                                  : 'bg-zinc-800 text-zinc-400'
+                              }`}>
+                                {predictedRank === 1 ? '1st' : predictedRank === 2 ? '2nd' : '3rd'}
+                                {correct && <span className="text-green-400">✓</span>}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-700 text-[10px]">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="bg-zinc-900 px-4 py-2 border-t border-zinc-800 flex gap-3 text-[9px] font-black uppercase tracking-wider">
-                {groupPicks.first && (
-                  <span className="text-yellow-500">1st: {getTeamName(groupPicks.first)}</span>
-                )}
-                {groupPicks.second && (
-                  <span className="text-zinc-200">2nd: {getTeamName(groupPicks.second)}</span>
-                )}
-                {groupPicks.third && (
-                  <span className="text-amber-600">3rd: {getTeamName(groupPicks.third)}</span>
-                )}
+              <div className="bg-zinc-900 px-4 py-2 border-t border-zinc-800 flex flex-wrap gap-2 text-[9px] font-black uppercase tracking-wider">
+                {groupPicks.first && (() => {
+                  const actualFirst = group.standings[0]?.code;
+                  return (
+                    <span className={actualFirst === groupPicks.first ? 'text-green-400' : 'text-yellow-500'}>
+                      1st: {group.standings.find(t => t.code === groupPicks.first)?.name || groupPicks.first}
+                      {actualFirst === groupPicks.first ? ' ✓' : ''}
+                    </span>
+                  );
+                })()}
+                {groupPicks.second && (() => {
+                  const actualSecond = group.standings[1]?.code;
+                  return (
+                    <span className={actualSecond === groupPicks.second ? 'text-green-400' : 'text-zinc-300'}>
+                      2nd: {group.standings.find(t => t.code === groupPicks.second)?.name || groupPicks.second}
+                      {actualSecond === groupPicks.second ? ' ✓' : ''}
+                    </span>
+                  );
+                })()}
+                {groupPicks.third && (() => {
+                  const actualThird = group.standings[2]?.code;
+                  return (
+                    <span className={actualThird === groupPicks.third ? 'text-green-400' : 'text-amber-600'}>
+                      3rd: {group.standings.find(t => t.code === groupPicks.third)?.name || groupPicks.third}
+                      {actualThird === groupPicks.third ? ' ✓' : ''}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           );
         })}
       </div>
 
-      {isClosed ? (
-        <footer className="bg-zinc-900 border border-zinc-800 p-6">
-          <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm font-bold">
-            <Lock size={16} />
-            <span>Group predictions are finalized — Time Over</span>
-          </div>
-        </footer>
-      ) : (
-        <footer className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-6">
-          <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold">
-            <Info size={16} />
-            <span>Click 1st/2nd/3rd badges to assign positions. Click again to remove. Max 8 third-place picks.</span>
-          </div>
-          <button
-            onClick={handleSave}
-            disabled={saving || !allGroupsComplete}
-            className="ml-auto min-w-[200px] bg-white hover:bg-zinc-200 text-black font-black py-3.5 px-8 transition-all text-sm cursor-pointer disabled:opacity-30 flex items-center justify-center gap-2"
-          >
-            {saving ? 'Saving...' : saved ? (
-              <><Check size={16} /> Saved!</>
-            ) : (
-              <><Save size={16} /> Save Group Predictions</>
-            )}
-          </button>
-        </footer>
-      )}
+      <footer className="bg-zinc-900 border border-zinc-800 p-6">
+        <div className="flex items-center justify-center gap-4 text-zinc-500 text-sm font-bold">
+          <Trophy size={16} className="text-yellow-500" />
+          <span className="text-green-400">✓</span><span>Correct prediction</span>
+          <span className="text-zinc-600">|</span>
+          <Medal size={16} className="text-zinc-400" />
+          <span>Your picks shown in your pick column</span>
+        </div>
+      </footer>
     </div>
   );
 }

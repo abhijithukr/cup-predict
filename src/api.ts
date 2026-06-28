@@ -107,6 +107,13 @@ export async function getLeaderboard() {
   return handleResponse(res);
 }
 
+export async function getGroupStandings() {
+  const res = await fetch(`${API_BASE}/group-standings`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
 export async function getGroupPredictions() {
   const res = await fetch(`${API_BASE}/group-predictions`, {
     headers: getAuthHeaders(),
