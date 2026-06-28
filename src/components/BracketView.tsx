@@ -34,7 +34,6 @@ interface BracketTree {
 }
 
 const ROUND_LABELS = [
-  { key: 'roundOf32', label: 'Round of 32', short: 'R32', matches: 16 },
   { key: 'roundOf16', label: 'Round of 16', short: 'R16', matches: 8 },
   { key: 'quarterFinals', label: 'Quarter-Finals', short: 'QF', matches: 4 },
   { key: 'semiFinals', label: 'Semi-Finals', short: 'SF', matches: 2 },
@@ -50,7 +49,6 @@ export default function BracketView() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0);
-  const [needsGroups, setNeedsGroups] = useState(false);
   const [teamNames, setTeamNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -62,14 +60,10 @@ export default function BracketView() {
           setIsLocked(data.locked);
           buildTeamNames(data.bracket);
         } else {
-          setNeedsGroups(true);
+          setError('No bracket data available. Complete group predictions and set R32 picks first.');
         }
       } catch (err: any) {
-        if (err.message?.includes('Complete all 12 group predictions')) {
-          setNeedsGroups(true);
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -191,7 +185,6 @@ export default function BracketView() {
   function countPicks(): number {
     if (!bracket) return 0;
     let c = 0;
-    for (const m of bracket.roundOf32) if (m.winner) c++;
     for (const m of bracket.roundOf16) if (m.winner) c++;
     for (const m of bracket.quarterFinals) if (m.winner) c++;
     for (const m of bracket.semiFinals) if (m.winner) c++;
@@ -207,27 +200,13 @@ export default function BracketView() {
     );
   }
 
-  if (needsGroups) {
+  if (error) {
     return (
       <div className="w-full space-y-6">
         <header className="mb-4">
           <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">Knockout Bracket</h1>
-          <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">Complete your group predictions first</p>
+          <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">From Round of 16 to the Final</p>
         </header>
-        <div className="bg-zinc-950 border border-zinc-800 p-12 text-center">
-          <Trophy size={48} className="mx-auto text-zinc-600 mb-4" />
-          <h3 className="text-lg font-black text-zinc-400 uppercase tracking-tighter mb-2">Group Predictions Required</h3>
-          <p className="text-zinc-500 text-sm max-w-md mx-auto">
-            You need to complete all 12 group predictions before the knockout bracket can be generated.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full space-y-6">
         <div className="bg-red-950/40 border border-red-800 text-red-400 p-4 text-xs font-bold uppercase tracking-wider">{error}</div>
       </div>
     );
@@ -247,7 +226,7 @@ export default function BracketView() {
     return (
       <button
         onClick={() => handlePick(currentRound.key as RoundKey, idx, team)}
-        disabled={isLocked}
+        disabled={isLocked || !bracket?.roundOf32.some(m => m.winner)}
         className={`w-full flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
           isWinner
             ? 'bg-emerald-950/40 border-emerald-600 text-emerald-400'
@@ -268,11 +247,11 @@ export default function BracketView() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">Knockout Bracket</h1>
-            <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">Pick winners round by round</p>
+            <p className="text-zinc-400 text-sm font-bold uppercase tracking-[0.2em]">From R16 to the Final</p>
           </div>
           <div className="text-right">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Selections</p>
-            <p className="font-black text-xl text-white">{countPicks()}/31</p>
+            <p className="font-black text-xl text-white">{countPicks()}/15</p>
           </div>
         </div>
       </header>
