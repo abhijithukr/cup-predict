@@ -93,7 +93,6 @@ export default function App() {
   const NAV_ITEMS = [
     { id: 'DASHBOARD', label: 'Welcome Hub', icon: Tv },
     { id: 'GROUP_STAGE', label: 'Group Stage', icon: Shield },
-    { id: 'KNOCKOUTS', label: 'Knockouts', icon: Trophy },
 
     { id: 'LEADERBOARD', label: 'Leaderboard', icon: Award },
     { id: 'PROFILE', label: 'My profile', icon: User },

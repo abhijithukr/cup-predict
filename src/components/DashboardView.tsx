@@ -301,9 +301,9 @@ export default function DashboardView({ user, onNavigate }: DashboardViewProps) 
 
           {allFixtures.length > 0 && (
             <section id="all-fixtures" ref={fixturesRef} className="space-y-4">
-              <h3 className="text-lg font-black text-white uppercase tracking-tighter">All Fixtures</h3>
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Group Stage Fixtures</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allFixtures.map((f: any) => {
+                {allFixtures.filter((f: any) => !f.id.startsWith('r32_')).map((f: any) => {
                   const s = fixtureScores[f.id] || { a: '', b: '' };
                   const isPast = f.isClosed || f.actualScoreA !== null || new Date(f.kickoffTime) <= new Date();
                   const justSaved = savedFixtures[f.id];
